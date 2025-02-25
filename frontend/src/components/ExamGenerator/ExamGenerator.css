@@ -1,0 +1,275 @@
+
+.exam-container {
+  width: 100%;
+  min-height: 100vh; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: #f7f9fc;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.exam-container h2 {
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.exam-settings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center; 
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 1200px;
+  margin-bottom: 15px;
+  gap: 15px;
+}
+
+
+.exam-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+
+.exam-label span {
+  margin-bottom: -5px; 
+}
+
+
+.num-questions-input {
+  margin-top: 5px;
+  transform: translateY(-8px);
+}
+.exam-type-select{
+  margin-top: 10px;
+  
+}
+.num-questions-input {
+  padding: 10px;
+  font-size: 18px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 100%;
+  background: #f9f9f9;
+  margin-top: -2px;
+}
+
+.generate-btn {
+  background: #007bff;
+  color: white;
+  padding: 12px 20px;
+  font-size: 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  height: 45px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 25px; 
+}
+
+.generate-btn:hover {
+  background: #0056b3;
+}
+
+
+.exam-content {
+  flex: 1; 
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  width: 80%;
+  max-width: 1200px;
+  overflow-y: auto;
+  flex-grow: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+.exam-question textarea {
+  width: 100%;
+  height: 120px; 
+  font-size: 18px; 
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  resize: vertical; 
+  background: #f9f9f9;
+}
+
+
+
+
+.exam-question p {
+  font-size: 22px;  
+  color: #000;  
+  font-family: 'Arial', sans-serif; 
+  font-family: sans-serif; 
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin-bottom: 15px;
+  line-height: 1.4;
+}
+
+
+.exam-option {
+  display: flex;
+  align-items: center;
+  gap: 12px; 
+  font-size: 20px; 
+  font-weight: 500; 
+  color: #222; 
+  padding: 10px 0; 
+}
+
+
+.exam-option input[type="radio"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #007bff; 
+}
+
+
+.exam-option label {
+  cursor: pointer;
+  font-size: 20px;
+}
+
+
+
+.error-message {
+  color: red;
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+
+@media screen and (max-width: 768px) {
+  .exam-settings {
+    flex-direction: column;
+    align-items: stretch;
+    width: 90%;
+  }
+
+  .exam-content {
+    width: 90%;
+    height: calc(100vh - 220px);
+  }
+}
+
+
+.grade-btn {
+  background: #28a745; 
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  width: 100%;
+  max-width: 300px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.grade-btn:hover {
+  background: #218838; 
+}
+
+.grade-btn:active {
+  transform: scale(0.95); 
+}
+
+
+.exam-results-container {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 1200px;
+  text-align: center;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; 
+  position: relative; 
+}
+
+.retry-btn {
+  background: #ff9800;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  width: 100%;
+  max-width: 300px;
+  margin-top: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.retry-btn:hover {
+  background: #e68900; 
+}
+
+.retry-btn:active {
+  transform: scale(0.95); 
+}
+
+.exam-type-options {
+  display: flex;
+  align-items: center; 
+  gap: 15px;
+  margin-top: 5px; 
+}
+
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 18px;
+}
+
+.radio-option input {
+  transform: translateY(-2px); 
+  margin-bottom: 2px;
+}
+
+.exam-label.tipo-examen span {
+  display: inline-block;
+  margin-bottom: 11.5px; 
+}
+
+.exam-label.num-preguntas span {
+  display: inline-block;
+  margin-bottom: 11.5px; 
+}

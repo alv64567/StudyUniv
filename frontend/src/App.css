@@ -1,0 +1,19 @@
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #f4f8fc;
+  color: #2c3e50;
+}
+
+h1, p {
+  margin: 0;
+}
+
+button {
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
