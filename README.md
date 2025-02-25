@@ -28,8 +28,6 @@ npm install
 ### 3️⃣ Crear un archivo .env
 Crea un archivo .env en la carpeta frontend con las siguientes variables:
 
-### 4️⃣ Crear un archivo .env
-Crea un archivo .env en la carpeta backend con las siguientes variables:
 ```
 MONGO_URI=
 JWT_SECRET=clave_secreta
