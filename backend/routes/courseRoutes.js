@@ -1,6 +1,5 @@
 import express from 'express';
 import { answerQuestionWithContext } from '../controllers/openaiControllers.js';
-import { gradeOpenQuestions } from '../controllers/courseController.js';
 import path from 'path';
 import fs from 'fs';
 

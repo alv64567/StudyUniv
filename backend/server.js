@@ -20,7 +20,7 @@ app.use(express.json()); // Middleware para manejar JSON
 
 // Configurar CORS
 app.use(cors({
-  origin: 'http://localhost:5173', // Permitir solicitudes desde el frontend
+  origin: 'http://localhost:5173', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true, 
 }));
@@ -33,7 +33,7 @@ app.get('/', (req, res) => {
   res.send('El servidor está funcionando correctamente');
 });
 
-// Middleware de manejo de errores
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Ha ocurrido un error' });

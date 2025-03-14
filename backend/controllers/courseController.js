@@ -150,7 +150,6 @@ export const deleteCourse = async (req, res) => {
       return res.status(404).json({ message: 'Curso no encontrado.' });
     }
 
-    // Verificar autorización
     if (course.user.toString() !== req.user.id) {
       return res.status(401).json({ message: 'No autorizado.' });
     }
@@ -210,61 +209,6 @@ export const deleteMaterial = async (req, res) => {
   } catch (error) {
     console.error('Error al eliminar material:', error);
     res.status(500).json({ message: 'Error al eliminar el material.' });
-  }
-};
-
-
-export const gradeOpenQuestions = async (req, res) => {
-  const { responses, questions } = req.body;
-
-  if (!Array.isArray(questions) || !Array.isArray(responses)) {
-    return res.status(400).json({ message: 'Las preguntas y respuestas deben ser arreglos.' });
-  }
-
-  try {
-    let totalScore = 0;
-    const gradingDetails = [];
-
-    for (let i = 0; i < questions.length; i++) {
-      const question = questions[i];
-      const userAnswer = responses[i] || '';
-
-      const prompt = `
-        Evalúa la respuesta del estudiante basada en la pregunta dada.
-        Proporciona estrictamente los siguientes elementos:
-        1. "Calificación: [un número entre 0 y 100]"
-        2. "Corrección: [una breve corrección o explicación de por qué se otorgó esta calificación]"
-
-        Pregunta: ${question}
-        Respuesta del estudiante: ${userAnswer}
-
-        Por favor, responde siguiendo exactamente este formato:
-        Calificación: [un número entre 0 y 100]
-        Corrección: [texto aquí]
-`;
-
-
-
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 150,
-      });
-
-      const feedback = completion.choices[0].message.content;
-      const scoreMatch = feedback.match(/Calificación:\s*(\d+)/i);
-      const score = scoreMatch ? parseInt(scoreMatch[1], 10) : 0;
-
-      totalScore += score;
-      gradingDetails.push({ question, userAnswer, feedback });
-    }
-
-    const averageScore = (totalScore / questions.length).toFixed(2);
-
-    res.status(200).json({ score: averageScore, details: gradingDetails });
-  } catch (error) {
-    console.error('Error al calificar preguntas abiertas:', error.message);
-    res.status(500).json({ message: 'Error al calificar las preguntas abiertas.' });
   }
 };
 

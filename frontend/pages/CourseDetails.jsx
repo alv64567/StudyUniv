@@ -10,7 +10,6 @@ const CourseDetails = () => {
   const [message, setMessage] = useState('');
   const token = localStorage.getItem('token');
 
-  // Obtener detalles de la asignatura
   useEffect(() => {
     const fetchCourseDetails = async () => {
       try {
@@ -33,7 +32,7 @@ const CourseDetails = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessage('Asignatura eliminada con éxito.');
-      setTimeout(() => navigate('/dashboard'), 1500); // Redirigir al Dashboard
+      setTimeout(() => navigate('/dashboard'), 1500); 
     } catch (error) {
       console.error('Error al eliminar la asignatura:', error);
       setMessage('Error al eliminar la asignatura.');

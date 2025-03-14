@@ -2,25 +2,33 @@ import Score from "../config/models/score.model.js";
 import Course from "../config/models/course.model.js";
 import User from '../config/models/user.model.js';
 import jwt from 'jsonwebtoken';
+import Exam from "../config/models/exam.model.js"; 
+
 
 export const obtenerCalificaciones = async (req, res) => {
   try {
-    const userId = req.user.id; 
-    const calificaciones = await Score.find({ userId }).populate("topic", "name");
+    const userId = req.user.id;
+    const calificaciones = await Score.find({ userId })
+      .populate("topic", "name") 
+      .lean();
 
     const resultado = calificaciones.map(score => ({
-      courseName: score.topic.name,
+      courseId: score.topic?._id || null, 
+      courseName: score.topic?.name || "Sin nombre",
       examType: score.examType,
       score: score.score,
-      examId: score._id, 
+      examId: score._id,
+      createdAt: score.createdAt
     }));
 
+    console.log("📌 Enviando todas las calificaciones:", resultado);
     res.status(200).json(resultado);
   } catch (error) {
-    console.error("Error al obtener calificaciones:", error);
+    console.error("❌ Error al obtener calificaciones:", error);
     res.status(500).json({ message: "Error al obtener calificaciones." });
   }
 };
+
 
 export const obtenerPerfil = async (req, res) => {
   try {
@@ -69,32 +77,37 @@ export const registerUser = async (req, res) => {
 export const obtenerCorreccion = async (req, res) => {
   try {
     const { examId } = req.params;
-    
-    
-    const examen = await Score.findById(examId).populate("topic", "name");
+
+    if (!examId || examId.length !== 24) {
+      return res.status(400).json({ message: "❌ Error: ID de examen inválido." });
+    }
+
+    const examen = await Score.findById(examId)
+      .populate("topic", "name")
+      .lean();
 
     if (!examen) {
-      return res.status(404).json({ message: "Examen no encontrado" });
+      return res.status(404).json({ message: "❌ Examen no encontrado." });
     }
 
-    if (!examen.questions || examen.questions.length === 0) {
-      console.warn(`⚠️ Examen ${examId} no tiene preguntas guardadas.`);
-    }
+    console.log("📌 Examen recuperado de BD:", examen);
 
     res.status(200).json({
       courseName: examen.topic?.name || "Sin nombre",
-      examType: examen.examType || "No especificado",
+      examType: examen.examType || "test",
       score: examen.score !== undefined ? examen.score : "No disponible",
-      questions: Array.isArray(examen.questions) ? examen.questions : [], 
-      correctAnswers: Array.isArray(examen.correctAnswers) ? examen.correctAnswers : [],
-      responses: Array.isArray(examen.responses) ? examen.responses : [],
+      questions: examen.questions.map(q => ({
+        question: q.question || q.text || "Pregunta no disponible",
+        options: q.options || [],
+        correctAnswer: q.correctAnswer || "No disponible",
+      })),
+      responses: examen.responses || [],
+      gradingResults: examen.gradingResults || [], 
     });
   } catch (error) {
-    console.error("Error al obtener corrección:", error);
-    res.status(500).json({ message: "Error al obtener la corrección del examen." });
+    console.error("❌ Error al obtener corrección:", error);
+    res.status(500).json({ message: "❌ Error al obtener la corrección del examen." });
   }
 };
-
-
 
 

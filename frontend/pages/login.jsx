@@ -28,14 +28,13 @@ const Login = () => {
       console.log("Respuesta del servidor:", response.data);
       console.log("Token recibido:", token);
 
-      // Almacenar el token en localStorage
       localStorage.setItem("token", token);
       console.log(
         "Token guardado en localStorage:",
         localStorage.getItem("token")
       );
 
-      // Redirigir al dashboard
+      
       window.location.href = "/dashboard";
     } catch (error) {
       console.error(

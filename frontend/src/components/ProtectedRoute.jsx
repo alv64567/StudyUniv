@@ -2,10 +2,9 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
-  // Obtén el token del localStorage
-  const token = localStorage.getItem('token');
 
-  // Si no hay token, redirige al inicio de sesión
+  const token = localStorage.getItem('token');
+  
   if (!token) {
     return <Navigate to="/login" />;
   }

@@ -19,22 +19,56 @@ const ExamGenerator = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    if (!courseId) return; 
-
-    const savedState = localStorage.getItem(`examState_${courseId}`);
-    if (savedState) {
-      const parsedState = JSON.parse(savedState);
-      setExam(parsedState.exam || []);
-      setResponses(parsedState.responses || {});
-      setExamLocked(parsedState.examLocked || false);
-      setFinalScore(parsedState.finalScore || null);
-      setExamType(parsedState.examType || "test");
-      setNumQuestions(parsedState.numQuestions || 5);
-      setGradingResults(parsedState.gradingResults || null);
-    }
-
+    console.log("✅ useEffect ejecutado - Intentando recuperar examen en curso o corregido");
+  
     fetchCourses();
-  }, [courseId]);
+  
+    const params = new URLSearchParams(window.location.search);
+    let examId = params.get("examId");
+    let selectedCourseId = params.get("courseId") || localStorage.getItem("selectedCourse") || "";
+  
+    if (!examId) {
+      examId = localStorage.getItem(`lastExamId_${selectedCourseId}`);
+    }
+  
+    if (!selectedCourseId || !examId) {
+      console.error("❌ No se encontró courseId o examId en la URL ni en localStorage.");
+      return;
+    }
+  
+    setCourseId(selectedCourseId);
+  
+    const savedExam = localStorage.getItem("savedExam");
+  
+    console.log("📌 Intentando cargar examen corregido desde localStorage...", savedExam);
+  
+    if (savedExam) {
+      console.log("📌 Examen corregido encontrado en localStorage. Cargando...");
+      const examData = JSON.parse(savedExam);
+  
+      console.log("📌 Datos recuperados:", examData);
+  
+      if (examData.exam && Array.isArray(examData.exam)) {
+        console.log("📌 Exam cargado desde localStorage:", examData.exam);
+        setExam(examData.exam);
+        setResponses(examData.responses);
+        setExamLocked(examData.examLocked);
+        setFinalScore(examData.finalScore);
+        setExamType(examData.examType);
+        setGradingResults(examData.gradingResults);
+      } else {
+        console.error("❌ Examen no válido en localStorage:", examData);
+        setExam([]); 
+      }
+      return; 
+    }
+  
+    console.log("📡 No se encontró el examen en localStorage. Buscando en la BD...");
+    fetchCorrectionFromDB(examId, selectedCourseId);
+  }, []);
+  
+  
+
 
   const fetchCourses = async () => {
     try {
@@ -46,31 +80,6 @@ const ExamGenerator = () => {
       console.error("❌ Error al obtener cursos:", error);
     }
   };
-
-  const handleResponseChange = (questionIndex, value) => {
-    if (!examLocked) {
-      setResponses((prev) => {
-        const updatedResponses = { ...prev, [questionIndex]: value };
-        saveExamState(updatedResponses);
-        return updatedResponses;
-      });
-    }
-  };
-
-  const saveExamState = (updatedResponses) => {
-    const examState = {
-      courseId,
-      exam,
-      responses: updatedResponses,
-      examLocked,
-      finalScore,
-      examType,
-      numQuestions,
-      gradingResults,
-    };
-    localStorage.setItem(`examState_${courseId}`, JSON.stringify(examState));
-  };
-
 
   const handleGenerateExam = async () => {
     if (!courseId) {
@@ -93,16 +102,34 @@ const ExamGenerator = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
   
-      const generatedExam = Array.isArray(res.data.exam) ? res.data.exam : [];
+      if (!res.data.exam || !Array.isArray(res.data.exam)) {
+        throw new Error("El servidor no devolvió preguntas válidas.");
+      }
+  
+      const generatedExam = res.data.exam;
       setExam(generatedExam);
-      saveExamState({});
+  
+      const examId = `exam_${courseId}_${Date.now()}`;
+      const examState = {
+        courseId,
+        examId,
+        exam: generatedExam,
+        responses: {},
+        examLocked: false,
+        finalScore: null,
+        examType,
+        gradingResults: null,
+      };
+  
+      localStorage.setItem(`examState_${courseId}_${examId}`, JSON.stringify(examState));
+      localStorage.setItem(`lastExamId_${courseId}`, examId);
     } catch (err) {
       setError(err.response?.data?.message || "Error al generar el examen.");
     } finally {
       setLoading(false);
     }
   };
-  
+
 
   const handleGradeExam = async () => {
     console.log("📌 Enviando respuestas al backend:", responses);
@@ -134,7 +161,25 @@ const ExamGenerator = () => {
             setGradingResults(res.data.results);
             setFinalScore(res.data.totalScore);
             setExamLocked(true);
-            saveExamState(responses);
+  
+            const examId = localStorage.getItem(`lastExamId_${courseId}`) || `exam_${courseId}_${Date.now()}`;
+  
+            const examState = {
+              courseId,
+              examId,
+              exam,
+              responses,
+              examLocked: true, 
+              finalScore: res.data.totalScore,
+              examType,
+              gradingResults: res.data.results,
+            };
+  
+            console.log("📌 Guardando examen corregido en localStorage:", examState);
+            localStorage.setItem(`examState_${courseId}_${examId}`, JSON.stringify(examState));
+            localStorage.setItem("lastExamId", examId);
+  
+            Swal.fire("✅ Examen calificado", "Tu calificación ha sido guardada correctamente.", "success");
           }
         } catch (error) {
           console.error("❌ Error al corregir el examen:", error);
@@ -145,9 +190,84 @@ const ExamGenerator = () => {
       }
     });
   };
+
+
+
+  const fetchCorrectionFromDB = async (examId, courseId) => {
+    setLoading(true);
+    try {
+        const res = await axios.get(`http://localhost:5000/users/exam/correction/${examId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        console.log("📌 Respuesta del backend:", res.data); 
+
+        if (res.data) {
+            const correctedExam = {
+                courseId,
+                examId,
+                exam: res.data.questions.map((question, index) => ({
+                    question: question?.question || question?.text || "Pregunta no disponible",
+                    options: question?.options || [],
+                    correctAnswer: question?.correctAnswer || "No disponible",
+                })),
+                responses: res.data.responses || {},
+                examLocked: true,
+                finalScore: res.data.score || 0,
+                examType: res.data.examType || "test",
+                gradingResults: res.data.gradingResults || [], // comentarios corrección
+            };
+
+            console.log("📌 Exam procesado en frontend:", correctedExam);
+
+            localStorage.setItem(`examState_${courseId}_${examId}`, JSON.stringify(correctedExam));
+            localStorage.setItem(`lastExamId_${courseId}`, examId);
+            localStorage.setItem("selectedCourse", courseId);
+
+            setExam(correctedExam.exam);
+            setResponses(correctedExam.responses);
+            setExamLocked(correctedExam.examLocked);
+            setFinalScore(correctedExam.finalScore);
+            setExamType(correctedExam.examType);
+            setGradingResults(correctedExam.gradingResults); 
+        }
+    } catch (error) {
+        console.error("❌ Error al obtener la corrección desde BD:", error);
+    }
+    setLoading(false);
+};
+
+
+  const handleResponseChange = (questionIndex, value) => {
+    if (!examLocked) {
+      setResponses((prev) => {
+        const updatedResponses = { ...prev, [questionIndex]: value };
+        saveExamState(updatedResponses);
+        return updatedResponses;
+      });
+    }
+  };
   
-
-
+  const saveExamState = (updatedResponses) => {
+    const examId = localStorage.getItem(`lastExamId_${courseId}`);
+    if (!examId) return;
+  
+    const examState = {
+      courseId,
+      examId,
+      exam,
+      responses: updatedResponses,
+      examLocked,
+      finalScore,
+      examType,
+      numQuestions,
+      gradingResults,
+    };
+  
+    console.log("📌 Guardando estado del examen en localStorage:", examState);
+    localStorage.setItem(`examState_${courseId}_${examId}`, JSON.stringify(examState));
+  };
+  
   return (
     <div className="exam-container">
       <h2>📖 Generador de Exámenes</h2>
@@ -229,8 +349,9 @@ const ExamGenerator = () => {
 
   { }
   <button onClick={handleGenerateExam} className="generate-btn">
-    Generar Examen
-  </button>
+  Generar Examen
+</button>
+
 </div>
 
 
@@ -238,54 +359,46 @@ const ExamGenerator = () => {
     {error && <p className="error-message">{error}</p>}
 
     <div className="exam-content">
-{exam.length > 0 ? (
-  exam.map((q, idx) => (
-    <div key={idx} className="exam-question">
-      <p><strong>{`${idx + 1}. ${q.question}`}</strong></p>
-
-      {examType === "test" ? (
-        q.options.map((option, optIdx) => (
-          <div key={optIdx} className="exam-option">
-            <input
-              type="radio"
-              name={`q-${idx}`}
-              value={option}
-              checked={responses[idx] === option}
-              onChange={() => handleResponseChange(idx, option)}
-              disabled={examLocked}
-            />
-            <label>{option}</label>
-          </div>
-        ))
-      ) : (
-        <textarea
-          value={responses[idx] || ""}
-          onChange={(e) => handleResponseChange(idx, e.target.value)}
-          placeholder="Escribe tu respuesta aquí..."
-          disabled={examLocked}
-        />
-      )}
-
-      {gradingResults && gradingResults[idx] && (
-        <div className="grading-feedback">
-          <p><strong>✅ Puntuación:</strong> {gradingResults[idx].score}/100</p>
-          <p><strong>💬 Comentario:</strong> {gradingResults[idx].feedback}</p>
-          {gradingResults[idx].score === 100 ? (
-            <p className="text-success">🎉 ¡Perfecto!</p>
-          ) : gradingResults[idx].score >= 70 ? (
-            <p className="text-warning">⚠️ Casi bien, pero falta detalle.</p>
-          ) : (
-            <p className="text-danger">❌ Respuesta incorrecta.</p>
-          )}
+    {exam && exam.length > 0 ? (
+    exam.map((q, idx) => (
+        <div key={idx} className="exam-question">
+            <p><strong>{`${idx + 1}. ${q.question}`}</strong></p>
+            {examType === "test" && q.options && q.options.length > 0 ? (
+                q.options.map((option, optIdx) => (
+                    <div key={optIdx} className="exam-option">
+                        <input
+                            type="radio"
+                            name={`q-${idx}`}
+                            value={option}
+                            checked={responses[idx] === option}
+                            onChange={() => handleResponseChange(idx, option)}
+                            disabled={examLocked}
+                        />
+                        <label>{option}</label>
+                    </div>
+                ))
+            ) : (
+                <textarea
+                    value={responses[idx] || ""}
+                    onChange={(e) => handleResponseChange(idx, e.target.value)}
+                    placeholder="Escribe tu respuesta aquí..."
+                    disabled={examLocked}
+                />
+            )}
+            {gradingResults && gradingResults[idx] && (
+                <div className="grading-feedback">
+                    <p><strong>✅ Puntuación:</strong> {gradingResults[idx]?.score}/100</p>
+                    <p><strong>💬 Comentario:</strong> {gradingResults[idx]?.feedback || "Sin comentarios"}</p>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  ))
+    ))
 ) : (
-  <p className="info-message">No hay preguntas generadas aún.</p>
+    <p className="info-message">No hay preguntas generadas aún.</p>
 )}
-</div>
 
+
+</div>
 
 
 {exam.length > 0 && (

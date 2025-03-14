@@ -85,7 +85,7 @@ export const answerQuestionWithContext = async (req, res) => {
 
     // Solicita a OpenAI
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 300,
     });
@@ -124,7 +124,7 @@ export const chatWithAI = async (req, res) => {
     `;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 1000,
     });
@@ -156,89 +156,106 @@ export const chatWithAI = async (req, res) => {
 
 export const generateExam = async (req, res) => {
   const { topic, numQuestions, examType } = req.body;
+  const userId = req.user.id;
+
+  if (!topic || topic.length !== 24) {
+    return res.status(400).json({ message: "❌ Error: ID de curso inválido." });
+  }
 
   try {
     const course = await Course.findById(topic);
     if (!course) {
-      return res.status(404).json({ message: "Curso no encontrado." });
+      return res.status(404).json({ message: "❌ Curso no encontrado." });
     }
 
     let documentation = course.extractedText;
     if (!documentation || documentation.trim() === "") {
-      return res.status(404).json({ message: "No hay documentación para este curso." });
+      return res.status(404).json({ message: "❌ No hay documentación para este curso." });
     }
 
-    // Dividir el texto en fragmentos de 2000 tokens
+    // Dividir el texto en fragmentos
     const maxTokensPerFragment = 2000;
     const fragments = documentation.match(new RegExp(`.{1,${maxTokensPerFragment}}`, "g")) || [];
-
-    // Si hay demasiados fragmentos, seleccionamos los más relevantes
     const relevantChunks = fragments.slice(0, 3).join("\n\n");
 
+    // Incluir la documentación en el prompt
     const prompt = `
-    Genera un examen de ${numQuestions} preguntas basado en el siguiente contenido del curso. 
+    Genera un examen de ${numQuestions} preguntas basado en el siguiente contenido del curso.
     Las preguntas deben ser del tipo '${examType}'.
     
     Si es de opción múltiple, incluye 4 opciones y la respuesta correcta. 
     
+    📖 **Contenido del curso**:
+    ${relevantChunks}
+
     ### Formato de salida obligatorio (devuelve solo un JSON válido sin texto adicional):
     [
       {
         "question": "¿Qué función desempeña GRUB en un sistema Unix?",
         "options": ["A) Administrar servicios y demonios", "B) Modificar la organización de directorios", "C) Modificar las opciones al arrancar el equipo", "D) Cambiar el nivel de ejecución del sistema"],
         "answer": "C) Modificar las opciones al arrancar el equipo"
-      },
-      {
-        "question": "¿Cuál es la función del kernel en Linux?",
-        "options": ["A) Gestionar hardware", "B) Editar archivos", "C) Instalar software", "D) Administrar usuarios"],
-        "answer": "A) Gestionar hardware"
       }
     ]
-
-    📖 Material del curso:
-    ${relevantChunks}
-
-    Responde únicamente con un JSON válido sin texto adicional.
     `;
 
-    console.log("📌 Enviando prompt a OpenAI...");
+    console.log("📌 Prompt enviado a OpenAI:", prompt);
 
-    // Generar preguntas con OpenAI
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 1000,
     });
 
     if (!completion.choices || completion.choices.length === 0) {
-      throw new Error("No se recibió una respuesta válida de OpenAI.");
+      throw new Error("❌ No se recibió una respuesta válida de OpenAI.");
     }
 
     let responseText = completion.choices[0].message.content.trim();
     console.log("📌 Respuesta de OpenAI:", responseText);
 
-    //Validación de JSON en la respuesta de OpenAI
-    try {
-      const jsonMatch = responseText.match(/\[.*\]/s);
-      if (!jsonMatch) {
-        throw new Error("No se encontró JSON válido en la respuesta de OpenAI.");
-      }
-
-      let generatedExam = JSON.parse(jsonMatch[0]); 
-      if (!Array.isArray(generatedExam)) {
-        throw new Error("OpenAI devolvió un objeto en lugar de un array.");
-      }
-
-      res.json({ exam: generatedExam });
-
-    } catch (error) {
-      console.error("❌ Error al convertir respuesta a JSON:", error);
-      return res.status(500).json({ message: "Error al procesar las preguntas generadas. Verifica el formato de OpenAI." });
+    // Extraer solo el JSON de la respuesta
+    const jsonMatch = responseText.match(/\[.*\]/s);
+    if (!jsonMatch) {
+      throw new Error("❌ OpenAI devolvió una respuesta sin JSON válido.");
     }
+
+    let generatedExam;
+    try {
+      generatedExam = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error("❌ Error al parsear JSON:", parseError);
+      return res.status(500).json({ message: "Error al interpretar la respuesta de OpenAI." });
+    }
+
+    if (!Array.isArray(generatedExam)) {
+      throw new Error("❌ OpenAI devolvió un objeto en lugar de un array.");
+    }
+
+    // Guardar el examen en MongoDB
+    const newExam = new Exam({
+      userId,
+      courseId: topic,
+      examType,
+      examLocked: false,
+      finalScore: null,
+      responses: [],
+      gradingResults: [],
+      questions: generatedExam.map(q => ({
+        question: q.question,
+        options: q.options || [],
+        correctAnswer: q.answer
+      })),
+    });
+
+    await newExam.save();
+
+    console.log("✅ Examen guardado correctamente en la base de datos.");
+
+    res.status(200).json({ examId: newExam._id, exam: generatedExam });
 
   } catch (error) {
     console.error("❌ Error en generateExam:", error.message);
-    res.status(500).json({ message: "Error al generar el examen." });
+    res.status(500).json({ message: "❌ Error al generar el examen." });
   }
 };
 
@@ -269,15 +286,18 @@ export const getSummary = async (req, res) => {
     }
 
     const prompt = `
-      Resume el siguiente contenido sobre '${topic}' en un máximo de ${maxWords} palabras.
-      Asegúrate de que el resumen termine en una frase completa sin cortar ideas a medias.
+      Resume el siguiente contenido sobre '${topic}' en aproximadamente ${maxWords} palabras.
+Si no hay suficiente información, amplía el contenido proporcionando más detalles y explicaciones.
+Asegúrate de que el resumen tenga entre ${Math.floor(maxWords * 0.9)} y ${Math.floor(maxWords * 1.1)} palabras.
+El resumen debe terminar en una frase completa sin cortar ideas a medias.
       ${text}
     `;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: maxWords * 2,
+      temperature: 0.3,
     });
 
     let summary = completion.choices[0]?.message?.content?.trim();
@@ -337,12 +357,10 @@ export const getChatHistory = async (req, res) => {
 
 
 export const gradeExam = async (req, res) => {
-  console.log("📌 Recibiendo datos en /exam/grade:", JSON.stringify(req.body, null, 2)); 
-
   const { responses, exam, courseId, examType } = req.body;
+  const userId = req.user.id;
 
   if (!exam || !Array.isArray(exam) || !responses || !courseId || !examType) {
-    console.error("❌ Error: Faltan datos en la solicitud.");
     return res.status(400).json({ message: "Faltan datos en la solicitud." });
   }
 
@@ -352,12 +370,9 @@ export const gradeExam = async (req, res) => {
 
     for (let i = 0; i < exam.length; i++) {
       const question = exam[i];
-      const userAnswer = responses[i]?.trim() || ""; 
+      const userAnswer = responses[i]?.trim() || "";
       let score = 0;
       let feedback = "";
-
-      console.log(`🔍 Pregunta ${i + 1}:`, question.question);
-      console.log(`📝 Respuesta del usuario:`, userAnswer);
 
       if (userAnswer === "") {
         score = 0;
@@ -367,29 +382,42 @@ export const gradeExam = async (req, res) => {
         score = userAnswer.toLowerCase() === correctOption.toLowerCase() ? 100 : 0;
         feedback = score === 100 ? "✅ Correcto." : `❌ Incorrecto. La respuesta correcta es: "${correctOption}"`;
       } else {
-        console.log(`🧠 Evaluando con OpenAI...`);
         const aiFeedback = await getAIGradingFeedback(userAnswer, question.question, question.answer);
         score = aiFeedback.score;
         feedback = aiFeedback.comment;
       }
-
-      console.log(`✅ Puntuación asignada: ${score}`);
-      console.log(`💬 Comentario generado: ${feedback}`);
 
       totalScore += score;
       gradingResults.push({ question: question.question, userAnswer, correctAnswer: question.answer, score, feedback });
     }
 
     const averageScore = (totalScore / exam.length).toFixed(2);
-    console.log(`📊 Calificación final: ${averageScore}`);
+
+    const newScore = new Score({
+      userId,
+      topic: courseId,
+      score: averageScore,
+      examType,
+      questions: exam.map(q => ({
+        question: q.question,
+        options: q.options || [],
+        correctAnswer: q.answer
+      })),
+      responses: responses,
+      gradingResults: gradingResults,
+      createdAt: new Date(),
+    });
+
+    await newScore.save();
 
     res.status(200).json({ totalScore: averageScore, results: gradingResults });
-
   } catch (error) {
     console.error("❌ Error interno en /exam/grade:", error);
     res.status(500).json({ message: "Error al corregir el examen." });
   }
 };
+
+
 
 
 const getAIGradingFeedback = async (userAnswer, question, correctAnswer) => {
@@ -400,11 +428,11 @@ const getAIGradingFeedback = async (userAnswer, question, correctAnswer) => {
     console.log("✅ Respuesta correcta esperada:", correctAnswer);
 
     const prompt = `
-      Evalúa la siguiente respuesta del estudiante en base a la pregunta y la respuesta correcta proporcionada.
+      Evalúa la siguiente respuesta en base a la pregunta y la respuesta correcta proporcionada.
       Proporciona una calificación en una escala de 0 a 100 y un comentario explicativo.
       
       Pregunta: ${question}
-      Respuesta del estudiante: ${userAnswer}
+      Tu respuesta ${userAnswer}
       Respuesta correcta esperada: ${correctAnswer}
 
       Devuelve SOLO un JSON válido con este formato:
@@ -415,9 +443,10 @@ const getAIGradingFeedback = async (userAnswer, question, correctAnswer) => {
     `;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 200,
+      temperature: 0.1,
     });
 
     console.log("📩 Respuesta de OpenAI:", completion.choices[0].message.content);
@@ -428,7 +457,7 @@ const getAIGradingFeedback = async (userAnswer, question, correctAnswer) => {
     return JSON.parse(jsonMatch[0]);
   } catch (error) {
     console.error("❌ Error en getAIGradingFeedback:", error);
-    return { score: 50, comment: "Evaluación manual requerida." }; // Respuesta de respaldo
+    return { score: 50, comment: "Evaluación manual requerida." }; 
   }
 };
 
