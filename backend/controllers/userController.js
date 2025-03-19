@@ -68,11 +68,32 @@ export const loginUser = async (req, res) => {
 
 export const registerUser = async (req, res) => {
   try {
-   
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'El email ya está registrado' });
+    }
+
+    const newUser = new User({ username, email, password });
+    await newUser.save();
+
+    res.status(201).json({ message: 'Usuario registrado con éxito' });
   } catch (error) {
-    res.status(500).json({ message: "Error al registrar el usuario" });
+    console.error('Error al registrar usuario:', error);
+
+    res.status(500).json({ message: 'Error del servidor' });
   }
 };
+
 
 export const obtenerCorreccion = async (req, res) => {
   try {
@@ -90,8 +111,6 @@ export const obtenerCorreccion = async (req, res) => {
       return res.status(404).json({ message: "❌ Examen no encontrado." });
     }
 
-    console.log("📌 Examen recuperado de BD:", examen);
-
     res.status(200).json({
       courseName: examen.topic?.name || "Sin nombre",
       examType: examen.examType || "test",
@@ -102,7 +121,7 @@ export const obtenerCorreccion = async (req, res) => {
         correctAnswer: q.correctAnswer || "No disponible",
       })),
       responses: examen.responses || [],
-      gradingResults: examen.gradingResults || [], 
+      gradingResults: examen.gradingResults || [],
     });
   } catch (error) {
     console.error("❌ Error al obtener corrección:", error);
