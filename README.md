@@ -26,7 +26,7 @@ npm install
 ```
 
 ### 3️⃣ Crear un archivo .env
-Crea un archivo .env en la carpeta frontend con las siguientes variables:
+Crea un archivo .env en la raíz del proyecto con las siguientes variables:
 
 ```
 MONGO_URI=
