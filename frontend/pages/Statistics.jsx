@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell
 } from "recharts";
-import "./Statistics.css"; // Estilos aparte para limpieza
+import "./Statistics.css"; 
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658'];
 
