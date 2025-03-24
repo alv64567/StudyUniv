@@ -12,8 +12,8 @@ import EditCourse from '../pages/EditCourse';
 import ChatAI from './components/ChatAI/chatAI';
 import ExamGenerator from './components/ExamGenerator/ExamGenerator';
 import SummaryGenerator from './components/SummaryGenerator/SummaryGenerator';
-
 import Grades from "./components/Grades";  
+import Statistics from '../pages/Statistics'; 
 
 const App = () => {
   return (
@@ -88,8 +88,10 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-
+          <Route path="/statistics" element={<Statistics />} />
+          
           </Routes>
+          
       </div>
       <Footer />
     </Router>

@@ -400,12 +400,16 @@ const ExamGenerator = () => {
 </div>
 
 
-{exam.length > 0 && !examLocked && (
+{finalScore !== null && (
   <div className="exam-results-container">
     <h3 className="final-score">
-      {finalScore !== null ? `Calificación Final: ${finalScore}/100` : "Examen Pendiente de Corrección"}
+      Calificación Final: {finalScore}/100
     </h3>
+  </div>
+)}
 
+{exam.length > 0 && !examLocked && (
+  <div className="exam-results-container">
     <button 
       onClick={handleGradeExam} 
       className="grade-btn"

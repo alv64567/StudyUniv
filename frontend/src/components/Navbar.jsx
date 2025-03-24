@@ -178,6 +178,7 @@ useEffect(() => {
                               style={{ minWidth: '200px', boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.2)' }}
                             >
                               <Link to="/grades" className="dropdown-item">📚 Libro de Calificaciones</Link>
+                              <Link to="/statistics" className="dropdown-item">📊 Estadísticas</Link>
                               <Link to="/settings" className="dropdown-item">⚙️ Configuración</Link>
                               <div className="dropdown-divider"></div>
                               <button className="dropdown-item text-danger" onClick={handleLogout}>Cerrar sesión</button>
