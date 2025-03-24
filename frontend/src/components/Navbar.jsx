@@ -30,6 +30,19 @@ const Navbar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem("selectedCourse");
+
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith("chatHistory_")) {
+      localStorage.removeItem(key);
+    }
+  });
+
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith("summaryHistory_")) {
+      localStorage.removeItem(key);
+    }
+  });
     setIsAuthenticated(false);
     window.location.href = '/login';
   };

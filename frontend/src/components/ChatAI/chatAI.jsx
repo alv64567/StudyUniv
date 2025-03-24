@@ -13,6 +13,12 @@ const ChatAI = () => {
   const token = localStorage.getItem("token");
   const userId = token ? jwtDecode(token).id : null;
 
+  // Al montar el componente, eliminamos la asignatura seleccionada previamente
+useEffect(() => {
+  localStorage.removeItem("selectedCourse");
+  setCourseId("");
+}, []);
+
 
   useEffect(() => {
     const fetchCourses = async () => {
