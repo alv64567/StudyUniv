@@ -1,27 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import './ChatAI.css';
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import "./ChatAI.css";
+import { jwtDecode } from "jwt-decode";
 
 const ChatAI = () => {
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
-  const [courseId, setCourseId] = useState(localStorage.getItem('selectedCourse') || '');
+  const [courseId, setCourseId] = useState(localStorage.getItem("selectedCourse") || "");
   const chatEndRef = useRef(null);
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
+  const userId = token ? jwtDecode(token).id : null;
+
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/courses', {
+        const res = await axios.get("http://localhost:5000/courses", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCourses(res.data);
       } catch (error) {
-        console.error('Error al obtener las asignaturas:', error);
+        console.error("❌ Error al obtener las asignaturas:", error);
       }
     };
+
     fetchCourses();
   }, [token]);
 
@@ -33,28 +37,30 @@ const ChatAI = () => {
 
   const fetchChatHistory = async (selectedCourseId) => {
     try {
-      const localHistory = localStorage.getItem(`chatHistory_${selectedCourseId}`);
-      if (localHistory) {
-        setMessages(JSON.parse(localHistory));
-      } else {
-        const res = await axios.get(
-          `http://localhost:5000/courses/chat/history/${selectedCourseId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        console.log("📌 Mensajes recibidos del servidor:", res.data);
-        setMessages(res.data || []);
-        localStorage.setItem(`chatHistory_${selectedCourseId}`, JSON.stringify(res.data));
-      }
+      const res = await axios.get(
+        `http://localhost:5000/courses/chat/history/${selectedCourseId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      console.log("📌 Historial recibido del servidor:", res.data);
+  
+      const formattedHistory = res.data.flatMap(chat => ([
+        { sender: "user", content: chat.question },
+        { sender: "ai", content: chat.answer }
+      ]));
+  
+      setMessages(formattedHistory);
+      localStorage.setItem(`chatHistory_${userId}_${selectedCourseId}`, JSON.stringify(formattedHistory));
     } catch (error) {
       console.error("❌ Error al obtener historial del chat:", error);
     }
   };
+  
 
   const handleCourseChange = (e) => {
     const newCourseId = e.target.value;
     setCourseId(newCourseId);
-    localStorage.setItem('selectedCourse', newCourseId);
+    localStorage.setItem("selectedCourse", newCourseId);
     setMessages([]);
     fetchChatHistory(newCourseId);
   };
@@ -62,39 +68,39 @@ const ChatAI = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!question || !courseId) {
-      alert('Debe seleccionar una asignatura y escribir una pregunta.');
+    if (!courseId || !question) {
+      alert("Debe seleccionar una asignatura y escribir una pregunta.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const payload = { question, courseId };
+      const payload = { courseId, question };
       const res = await axios.post(
-        'http://localhost:5000/courses/chat',
+        "http://localhost:5000/courses/chat",
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const newMessages = [
         ...messages,
-        { sender: 'user', content: question },
-        { sender: 'ai', content: res.data.response },
+        { sender: "user", content: question },
+        { sender: "ai", content: res.data.response },
       ];
 
       setMessages(newMessages);
-      localStorage.setItem(`chatHistory_${courseId}`, JSON.stringify(newMessages));
-      setQuestion('');
+      localStorage.setItem(`chatHistory_${userId}_${courseId}`, JSON.stringify(newMessages));
+      setQuestion("");
     } catch (error) {
-      console.error('Error en el chat:', error);
+      console.error("❌ Error en el chat:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
@@ -132,7 +138,7 @@ const ChatAI = () => {
             disabled={loading}
           />
           <button type="submit" disabled={loading}>
-            Enviar
+            {loading ? "Generando..." : "Enviar"}
           </button>
         </form>
       </div>

@@ -49,13 +49,17 @@ export const createCourse = async (req, res) => {
 
 export const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ user: req.user.id });
+    const courses = await Course.find({ user: req.user.id })
+      .select('name _id createdAt') 
+      .lean(); // Convierte documentos de Mongoose en objetos JSON simples
+
     res.status(200).json(courses);
   } catch (error) {
     console.error('Error al obtener los cursos:', error);
     res.status(500).json({ message: 'Error al obtener los cursos.' });
   }
 };
+
 
 export const updateCourse = async (req, res) => {
   const { name, description } = req.body;
@@ -164,7 +168,6 @@ export const deleteCourse = async (req, res) => {
       });
     }
 
-    // Eliminar curso de la base de datos
     await Course.deleteOne({ _id: req.params.id });
 
     res.status(200).json({ message: 'Curso eliminado con éxito.' });

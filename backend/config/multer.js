@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Crear carpeta 'uploads' si no existe
+
 const uploadsPath = path.join(path.resolve(), 'uploads');
 if (!fs.existsSync(uploadsPath)) {
   console.log("Creando carpeta 'uploads'...");
@@ -13,7 +13,7 @@ if (!fs.existsSync(uploadsPath)) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Directorio donde se guardarán los archivos
+    cb(null, 'uploads/'); 
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);

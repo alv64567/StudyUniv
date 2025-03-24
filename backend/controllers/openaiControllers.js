@@ -10,6 +10,10 @@ import Score from '../config/models/score.model.js';
 
 import Exam from "../config/models/exam.model.js";
 
+import Summary from '../config/models/summary.model.js';
+
+import mongoose from "mongoose";
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -71,10 +75,8 @@ export const answerQuestionWithContext = async (req, res) => {
     const maxTokens = 1000;
     const fragments = splitTextByTokens(pdfText, maxTokens);
 
-    // Selecciona los fragmentos relevantes
     const relevantChunks = fragments.slice(0, 5);
 
-    // Construir el contexto
     const context = relevantChunks.join("\n\n");
     const prompt = `
       Usa el siguiente contexto para responder la pregunta de manera precisa:
@@ -83,7 +85,6 @@ export const answerQuestionWithContext = async (req, res) => {
       Pregunta: "${question}"
     `;
 
-    // Solicita a OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [{ role: "user", content: prompt }],
@@ -112,6 +113,7 @@ export const chatWithAI = async (req, res) => {
       return res.status(400).json({ message: "No se encontró material para este curso." });
     }
 
+
     const maxTokensPerFragment = 1000;
     const fragments = course.extractedText.match(new RegExp(`.{1,${maxTokensPerFragment}}`, "g")) || [];
     const relevantFragments = fragments.slice(0, 5);
@@ -131,20 +133,17 @@ export const chatWithAI = async (req, res) => {
 
     const response = completion.choices[0].message.content.trim();
 
-    const updatedChat = await Chat.findOneAndUpdate(
-      { user: userId, courseId },
-      {
-        $push: {
-          messages: [
-            { sender: "user", content: question, type: "chat", timestamp: new Date() },
-            { sender: "ai", content: response, type: "chat", timestamp: new Date() },
-          ],
-        },
-      },
-      { upsert: true, new: true, returnDocument: "after" }
-    );
+    const newChat = new Chat({
+      userId,
+      courseId,
+      question,
+      answer: response,
+      createdAt: new Date(),
+    });
 
-    console.log("📌 Mensajes guardados en la base de datos:", updatedChat);
+    await newChat.save();
+
+    console.log("📌 Pregunta y respuesta guardadas en la base de datos:", newChat);
 
     res.status(200).json({ response });
   } catch (error) {
@@ -152,7 +151,6 @@ export const chatWithAI = async (req, res) => {
     res.status(500).json({ message: "Error en el chat." });
   }
 };
-
 
 export const generateExam = async (req, res) => {
   const { topic, numQuestions, examType } = req.body;
@@ -173,12 +171,10 @@ export const generateExam = async (req, res) => {
       return res.status(404).json({ message: "❌ No hay documentación para este curso." });
     }
 
-    // Dividir el texto en fragmentos
     const maxTokensPerFragment = 2000;
     const fragments = documentation.match(new RegExp(`.{1,${maxTokensPerFragment}}`, "g")) || [];
     const relevantChunks = fragments.slice(0, 3).join("\n\n");
 
-    // Incluir la documentación en el prompt
     const prompt = `
     Genera un examen de ${numQuestions} preguntas basado en el siguiente contenido del curso.
     Las preguntas deben ser del tipo '${examType}'.
@@ -213,7 +209,6 @@ export const generateExam = async (req, res) => {
     let responseText = completion.choices[0].message.content.trim();
     console.log("📌 Respuesta de OpenAI:", responseText);
 
-    // Extraer solo el JSON de la respuesta
     const jsonMatch = responseText.match(/\[.*\]/s);
     if (!jsonMatch) {
       throw new Error("❌ OpenAI devolvió una respuesta sin JSON válido.");
@@ -231,7 +226,6 @@ export const generateExam = async (req, res) => {
       throw new Error("❌ OpenAI devolvió un objeto en lugar de un array.");
     }
 
-    // Guardar el examen en MongoDB
     const newExam = new Exam({
       userId,
       courseId: topic,
@@ -258,8 +252,6 @@ export const generateExam = async (req, res) => {
     res.status(500).json({ message: "❌ Error al generar el examen." });
   }
 };
-
-
 
 export const getSummary = async (req, res) => {
   const { topic, courseId, maxWords = 100 } = req.body;
@@ -305,53 +297,22 @@ El resumen debe terminar en una frase completa sin cortar ideas a medias.
       return res.status(500).json({ message: "OpenAI no pudo generar un resumen válido." });
     }
 
-    const updatedChat = await Chat.findOneAndUpdate(
-      { user: userId, courseId },
-      {
-        $push: {
-          messages: [
-            { sender: "user", content: topic, type: "summary", timestamp: new Date() },
-            { sender: "ai", content: summary, type: "summary", timestamp: new Date() },
-          ],
-        },
-      },
-      { upsert: true, new: true, returnDocument: "after" }
-    );
+    const newSummary = new Summary({
+      userId,
+      courseId,
+      topic,
+      summary,
+    });
 
-    console.log("📌 Resúmenes guardados en la base de datos:", updatedChat);
+    await newSummary.save();
+
+    console.log("📌 Resumen guardado en la colección summaries:", newSummary);
 
     res.json({ summary });
 
   } catch (error) {
     console.error("❌ Error en OpenAI:", error.response?.data || error.message);
     res.status(500).json({ message: "Error interno al generar el resumen." });
-  }
-};
-
-
-
-export const getChatHistory = async (req, res) => {
-  const { courseId } = req.params;
-  const userId = req.user.id;
-
-  try {
-    const chat = await Chat.findOne({ user: userId, courseId });
-
-    if (!chat) {
-      return res.json([]); 
-    }
-
-    // Filtrar mensajes solo del tipo "chat" y ordenarlos por fecha
-    const filteredMessages = chat.messages
-      .filter(msg => msg.type === "chat")
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-    console.log("📌 Historial del ChatAI recuperado:", filteredMessages);
-
-    res.json(filteredMessages);
-  } catch (error) {
-    console.error("Error al obtener historial del chat:", error);
-    res.status(500).json({ message: "Error al obtener historial del chat." });
   }
 };
 
@@ -416,8 +377,6 @@ export const gradeExam = async (req, res) => {
     res.status(500).json({ message: "Error al corregir el examen." });
   }
 };
-
-
 
 
 const getAIGradingFeedback = async (userAnswer, question, correctAnswer) => {

@@ -2,32 +2,31 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { connectDB } from './config/db.js';
-import User from './config/models/user.model.js'; 
+import User from './config/models/user.model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import protect from './middleware/authMiddleware.js';
 import userRoutes from './routes/userRoutes.js';
-import courseRoutes from './routes/courseRoutes.js'; 
+import courseRoutes from './routes/courseRoutes.js';
 import path from 'path';
 import Score from './config/models/score.model.js';
+import Summary from './config/models/summary.model.js'; 
 
-
-
-dotenv.config(); // Cargar variables de entorno
+dotenv.config(); 
 
 const app = express();
-app.use(express.json()); // Middleware para manejar JSON
+app.use(express.json()); 
 
-// Configurar CORS
 app.use(cors({
-  origin: 'http://localhost:5173', 
+  origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true, 
+  credentials: true,
 }));
 
-connectDB();
+connectDB(); 
 
 app.use('/users', userRoutes);
+app.use('/courses', protect, courseRoutes);
 
 app.get('/', (req, res) => {
   res.send('El servidor está funcionando correctamente');
@@ -40,10 +39,6 @@ app.use((err, req, res, next) => {
 });
 
 
-app.use('/users', userRoutes);
-app.use('/courses', protect, courseRoutes); 
-console.log('JWT_SECRET:', process.env.JWT_SECRET);
-
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 
 app.post('/scores', protect, async (req, res) => {
@@ -55,6 +50,31 @@ app.post('/scores', protect, async (req, res) => {
     res.status(201).json({ message: 'Calificación guardada.' });
   } catch (error) {
     res.status(500).json({ message: 'Error al guardar la calificación.' });
+  }
+});
+
+
+app.get('/courses/chat/history/:courseId', protect, async (req, res) => {
+  const { courseId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const chatHistory = await Chat.find({ courseId, userId }); 
+    res.json({ history: chatHistory });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener el historial del chat.' });
+  }
+});
+
+app.get('/courses/summary/history/:courseId', protect, async (req, res) => {
+  const { courseId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const history = await Summary.find({ courseId, userId });
+    res.json({ history });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener el historial de resúmenes.' });
   }
 });
 

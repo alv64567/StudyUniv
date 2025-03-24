@@ -1,17 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./SummaryGenerator.css";
+import { jwtDecode } from "jwt-decode";
+
 
 const SummaryGenerator = () => {
   const [topic, setTopic] = useState("");
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
-  const [courseId, setCourseId] = useState(localStorage.getItem('selectedSummaryCourse') || '');
+  const [courseId, setCourseId] = useState("");
   const [history, setHistory] = useState([]);
   const chatEndRef = useRef(null);
   const token = localStorage.getItem("token");
+  const userId = token ? jwtDecode(token).id : null;
   const [maxWords, setMaxWords] = useState(100);
+
+  // Al montar el componente, eliminamos la asignatura seleccionada previamente 
+  useEffect(() => {
+    localStorage.removeItem("selectedSummaryCourse");
+  }, []);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -31,12 +39,16 @@ const SummaryGenerator = () => {
   useEffect(() => {
     if (courseId) {
       fetchSummaryHistory(courseId);
+    } else {
+      setHistory([]); 
     }
   }, [courseId]);
 
   const fetchSummaryHistory = async (selectedCourseId) => {
     try {
-      const localHistory = localStorage.getItem(`summaryHistory_${selectedCourseId}`);
+      const key = `summaryHistory_${userId}_${selectedCourseId}`;
+      const localHistory = localStorage.getItem(key);
+  
       if (localHistory) {
         setHistory(JSON.parse(localHistory));
       } else {
@@ -44,22 +56,31 @@ const SummaryGenerator = () => {
           `http://localhost:5000/courses/summary/history/${selectedCourseId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
+  
         console.log("📌 Resúmenes recibidos del servidor:", res.data.history);
-        setHistory(res.data.history || []);
-        localStorage.setItem(`summaryHistory_${selectedCourseId}`, JSON.stringify(res.data.history));
+  
+        const formattedHistory = res.data.history.flatMap(item => ([
+          { sender: "user", content: item.topic },
+          { sender: "ai", content: item.summary }
+        ]));
+  
+        setHistory(formattedHistory);
+        localStorage.setItem(key, JSON.stringify(formattedHistory));
       }
     } catch (error) {
       console.error("❌ Error al obtener historial del resumen:", error);
     }
   };
+  
 
   const handleCourseChange = (e) => {
     const newCourseId = e.target.value;
     setCourseId(newCourseId);
-    localStorage.setItem('selectedSummaryCourse', newCourseId);
+    localStorage.setItem("selectedSummaryCourse", newCourseId);
     setHistory([]);
-    fetchSummaryHistory(newCourseId);
+    if (newCourseId) {
+      fetchSummaryHistory(newCourseId);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -89,7 +110,7 @@ const SummaryGenerator = () => {
       ];
 
       setHistory(newHistory);
-      localStorage.setItem(`summaryHistory_${courseId}`, JSON.stringify(newHistory));
+      localStorage.setItem(`summaryHistory_${userId}_${courseId}`, JSON.stringify(newHistory));
       setSummary(res.data.summary);
       setTopic("");
     } catch (error) {
@@ -112,11 +133,7 @@ const SummaryGenerator = () => {
   return (
     <div className="summary-container">
       <h2>Generador de Resúmenes</h2>
-      <select
-        className="course-select"
-        value={courseId}
-        onChange={handleCourseChange}
-      >
+      <select className="course-select" value={courseId} onChange={handleCourseChange}>
         <option value="">Selecciona una asignatura</option>
         {courses.map((course) => (
           <option key={course._id} value={course._id}>

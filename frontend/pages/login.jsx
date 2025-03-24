@@ -23,6 +23,7 @@ const Login = () => {
         "http://localhost:5000/users/login",
         formData
       );
+
       const { token } = response.data;
 
       console.log("Respuesta del servidor:", response.data);

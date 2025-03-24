@@ -22,6 +22,8 @@ const ExamGenerator = () => {
     console.log("✅ useEffect ejecutado - Intentando recuperar examen en curso o corregido");
   
     fetchCourses();
+    localStorage.removeItem("lastExamId");
+    localStorage.removeItem("selectedCourse");
   
     const params = new URLSearchParams(window.location.search);
     let examId = params.get("examId");
@@ -31,11 +33,9 @@ const ExamGenerator = () => {
       examId = localStorage.getItem(`lastExamId_${selectedCourseId}`);
     }
   
-    if (!selectedCourseId || !examId) {
-      console.error("❌ No se encontró courseId o examId en la URL ni en localStorage.");
-      return;
-    }
-  
+  if (!selectedCourseId || !examId) {
+    return;
+  }
     setCourseId(selectedCourseId);
   
     const savedExam = localStorage.getItem("savedExam");
@@ -67,8 +67,6 @@ const ExamGenerator = () => {
     fetchCorrectionFromDB(examId, selectedCourseId);
   }, []);
   
-  
-
 
   const fetchCourses = async () => {
     try {
@@ -132,6 +130,7 @@ const ExamGenerator = () => {
 
 
   const handleGradeExam = async () => {
+    if (examLocked) return; 
     console.log("📌 Enviando respuestas al backend:", responses);
   
     Swal.fire({
@@ -215,7 +214,7 @@ const ExamGenerator = () => {
                 examLocked: true,
                 finalScore: res.data.score || 0,
                 examType: res.data.examType || "test",
-                gradingResults: res.data.gradingResults || [], // comentarios corrección
+                gradingResults: res.data.gradingResults || [], 
             };
 
             console.log("📌 Exam procesado en frontend:", correctedExam);
@@ -401,17 +400,21 @@ const ExamGenerator = () => {
 </div>
 
 
-{exam.length > 0 && (
+{exam.length > 0 && !examLocked && (
   <div className="exam-results-container">
     <h3 className="final-score">
       {finalScore !== null ? `Calificación Final: ${finalScore}/100` : "Examen Pendiente de Corrección"}
     </h3>
 
-    <button onClick={handleGradeExam} className="grade-btn">
+    <button 
+      onClick={handleGradeExam} 
+      className="grade-btn"
+    >
       📝 Corregir Examen
     </button>
   </div>
 )}
+
 </div>
 );
 };

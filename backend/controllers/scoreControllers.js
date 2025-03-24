@@ -1,6 +1,5 @@
 import Score from '../config/models/score.model.js';
 
-
 export const saveScore = async (req, res) => {
   const { topic, score, examType } = req.body;
 
