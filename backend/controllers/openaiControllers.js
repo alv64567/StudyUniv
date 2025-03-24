@@ -278,12 +278,21 @@ export const getSummary = async (req, res) => {
     }
 
     const prompt = `
-      Resume el siguiente contenido sobre '${topic}' en aproximadamente ${maxWords} palabras.
-Si no hay suficiente información, amplía el contenido proporcionando más detalles y explicaciones.
-Asegúrate de que el resumen tenga entre ${Math.floor(maxWords * 0.9)} y ${Math.floor(maxWords * 1.1)} palabras.
-El resumen debe terminar en una frase completa sin cortar ideas a medias.
-      ${text}
+    A partir del contenido proporcionado, genera un resumen enfocado exclusivamente en el tema: '${topic}'.
+    
+    - Si el tema aparece en el contenido, elabora un resumen claro, conciso y preciso de aproximadamente ${maxWords} palabras (entre ${Math.floor(maxWords * 0.9)} y ${Math.floor(maxWords * 1.1)}). El resumen debe terminar en una frase completa.
+    
+    - Si el contenido **no contiene información** sobre el tema solicitado, responde exactamente con:
+    "No hay suficiente información sobre el tema solicitado."
+    
+    - Si el tema es completamente incoherente, inventado o no tiene ningún sentido en el ámbito tecnológico, responde exactamente con:
+    "Proporciona un tema válido."
+    
+    Contenido del curso:
+    ${text}
     `;
+    
+
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
