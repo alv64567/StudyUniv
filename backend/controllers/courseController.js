@@ -227,7 +227,6 @@ export const getSummaryHistory = async (req, res) => {
       return res.json({ history: [] });
     }
 
-    // Filtrar mensajes de tipo "summary" y ordenarlos por fecha
     const summaryMessages = chat.messages
       .filter(msg => msg.type === "summary")
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));

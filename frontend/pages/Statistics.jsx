@@ -40,7 +40,7 @@ const Statistics = () => {
 
       <div className="chart-section">
         <h3>Promedio por Asignatura</h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={320}>
           <BarChart data={stats.averageByCourse}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="course" />
@@ -81,18 +81,68 @@ const Statistics = () => {
       </div>
 
       <div className="chart-section">
-        <h3>Calificaciones a lo largo del tiempo</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={stats.scoresOverTime}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis domain={[0, 100]} />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="score" stroke="#8884d8" />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+
+
+      <div className="chart-section">
+  <h3>Calificaciones a lo largo del tiempo por Asignatura</h3>
+  {Object.entries(stats.scoresOverTimeByCourse).map(([course, data]) => (
+    <div key={course}>
+      <h4>{course}</h4>
+      <ResponsiveContainer width="100%" height={250}>
+        <LineChart data={data}>
+          <CartesianGrid stroke="#ccc" />
+          <XAxis 
+          dataKey="date"
+          angle={-45}             
+          textAnchor="end" // alinear texto
+          interval={0}   //  mostrar todas las fechas
+          height={70}    // Aumenta el espacio si es necesario
+        />
+
+          <YAxis domain={[0, 100]} />
+          <Tooltip />
+          <Legend />
+          <Line 
+            type="linear"
+            dataKey="score"
+            stroke="#82ca9d"
+            strokeWidth={2}
+            strokeDasharray="5 5"  // linea discontinua
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  ))}
+</div>
+
+  <h3>Calificaciones a lo largo del tiempo</h3>
+  <ResponsiveContainer width="100%" height={300}>
+    <LineChart data={stats.scoresOverTime}>
+      <CartesianGrid stroke="#ccc" />
+      <XAxis 
+      dataKey="date"
+      angle={-45}             
+      textAnchor="end"        
+      interval={0}            
+      height={70}             
+    />
+
+      <YAxis domain={[0, 100]} />
+      <Tooltip />
+      <Legend />
+      <Line 
+        type="linear"
+        dataKey="score"
+        stroke="#8884d8"
+        strokeWidth={2}
+        strokeDasharray="5 5"  
+        dot={false}
+
+      />
+    </LineChart>
+  </ResponsiveContainer>
+</div>
     </div>
   );
 };

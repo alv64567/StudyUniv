@@ -4,7 +4,7 @@ import Footer from './components/Footer';
 import Home from '../pages/Home';
 import Login from '../pages/login';
 import Register from '../pages/Register';
-import Dashboard from './components/dashboard';
+import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import Courses from '../pages/course';
 import CourseDetails from '../pages/CourseDetails';
@@ -14,9 +14,12 @@ import ExamGenerator from './components/ExamGenerator/ExamGenerator';
 import SummaryGenerator from './components/SummaryGenerator/SummaryGenerator';
 import Grades from "./components/Grades";  
 import Statistics from '../pages/Statistics'; 
+import Settings from '../pages/Settings'; 
+import { FluentProvider, webLightTheme } from '@fluentui/react-components';
 
 const App = () => {
   return (
+    <FluentProvider theme={webLightTheme}>
     <Router>
       <Navbar />
       <div className="container-fluid p-0">
@@ -89,12 +92,22 @@ const App = () => {
             }
           />
           <Route path="/statistics" element={<Statistics />} />
+          <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
           
           </Routes>
+          
           
       </div>
       <Footer />
     </Router>
+    </FluentProvider>
   );
 };
 

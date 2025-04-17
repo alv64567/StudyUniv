@@ -15,6 +15,7 @@ export const getUserStatistics = async (req, res) => {
     const examTypesCount = {};
     const averageByCourse = {};
     const scoresOverTime = [];
+    const scoresOverTimeByCourse = {};
 
     const courseIds = [...new Set(scores.map(score => score.topic.toString()))];
     const courses = await Course.find({ _id: { $in: courseIds } });
@@ -28,18 +29,32 @@ export const getUserStatistics = async (req, res) => {
       const courseId = score.topic.toString();
       const courseName = courseNameMap[courseId] || "Curso desconocido";
 
+      const formattedDate = new Date(score.createdAt).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
+      scoresOverTime.push({
+        date: formattedDate,
+        score: Number(score.score)
+      });
+
+      if (!scoresOverTimeByCourse[courseName]) {
+        scoresOverTimeByCourse[courseName] = [];
+      }
+
+      scoresOverTimeByCourse[courseName].push({
+        date: formattedDate,
+        score: Number(score.score)
+      });
+
       if (!averageByCourse[courseName]) {
         averageByCourse[courseName] = [];
       }
-
       averageByCourse[courseName].push(Number(score.score));
 
       examTypesCount[score.examType] = (examTypesCount[score.examType] || 0) + 1;
-
-      scoresOverTime.push({
-        date: new Date(score.createdAt).toISOString().split('T')[0],
-        score: Number(score.score)
-      });
     });
 
     const formattedAverage = Object.entries(averageByCourse).map(([course, scores]) => ({
@@ -53,7 +68,8 @@ export const getUserStatistics = async (req, res) => {
       totalQuestions: chats.length,
       examTypesCount,
       averageByCourse: formattedAverage,
-      scoresOverTime
+      scoresOverTime,
+      scoresOverTimeByCourse
     });
   } catch (error) {
     console.error("❌ Error en getUserStatistics:", error);

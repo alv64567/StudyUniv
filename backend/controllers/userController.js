@@ -129,4 +129,14 @@ export const obtenerCorreccion = async (req, res) => {
   }
 };
 
+export const getPreferences = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
+    res.json({ preferences: user.preferences });
+  } catch (err) {
+    console.error('❌ Error al obtener preferencias:', err);
+    res.status(500).json({ message: 'Error al obtener preferencias' });
+  }
+};

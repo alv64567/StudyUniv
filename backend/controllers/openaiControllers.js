@@ -114,16 +114,18 @@ export const chatWithAI = async (req, res) => {
     }
 
 
-    const maxTokensPerFragment = 1000;
-    const fragments = course.extractedText.match(new RegExp(`.{1,${maxTokensPerFragment}}`, "g")) || [];
-    const relevantFragments = fragments.slice(0, 5);
-    const context = relevantFragments.join("\n\n");
+    const maxTokensPerChunk = 1000;
+const fragments = splitTextByTokens(course.extractedText.trim(), maxTokensPerChunk);
 
-    const prompt = `
-      Material del curso:\n${context}
-      Pregunta del usuario: ${question}
-      Responde de manera clara y concisa en base al material proporcionado.
-    `;
+const relevantChunks = await findRelevantChunks(question, fragments);
+const context = relevantChunks.join("\n\n");
+
+const prompt = `
+  Material del curso:\n${context}
+  Pregunta del usuario: ${question}
+  Responde de manera clara y concisa en base al material proporcionado.
+`;
+
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
@@ -271,23 +273,20 @@ export const getSummary = async (req, res) => {
       return res.status(404).json({ message: "No hay material en este curso para generar un resumen." });
     }
 
-    let text = course.extractedText.trim();
-    const maxTextLength = 4000;
-    if (text.length > maxTextLength) {
-      text = text.slice(0, maxTextLength);
-    }
+    let fullText = course.extractedText.trim();
+    const maxTokensPerChunk = 1000;
+    
+    const fragments = splitTextByTokens(fullText, maxTokensPerChunk);
+    const relevantChunks = await findRelevantChunks(topic, fragments);
+    const text = relevantChunks.join("\n\n"); 
+    
 
     const prompt = `
     A partir del contenido proporcionado, genera un resumen enfocado exclusivamente en el tema: '${topic}'.
     
     - Si el tema aparece en el contenido, elabora un resumen claro, conciso y preciso de aproximadamente ${maxWords} palabras (entre ${Math.floor(maxWords * 0.9)} y ${Math.floor(maxWords * 1.1)}). El resumen debe terminar en una frase completa.
     
-    - Si el contenido **no contiene información** sobre el tema solicitado, responde exactamente con:
-    "No hay suficiente información sobre el tema solicitado."
-    
-    - Si el tema es completamente incoherente, inventado o no tiene ningún sentido en el ámbito tecnológico, responde exactamente con:
-    "Proporciona un tema válido."
-    
+  
     Contenido del curso:
     ${text}
     `;

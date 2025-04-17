@@ -24,5 +24,6 @@ router.get("/exam/correction/:examId", authMiddleware, obtenerCorreccion);
 router.get('/statistics', protect, getUserStatistics);
 
 
+
 export default router;
 

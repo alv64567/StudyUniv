@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fluentui/react-components": "^9.61.4",
+    "@fluentui/react-icons": "^2.0.292",
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
     "jwt-decode": "^4.0.0",

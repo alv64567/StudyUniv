@@ -31,7 +31,19 @@
   .chart-section {
     margin: 3rem 0;
   }
-  
+
+  .chart-section h4 {
+    margin-top: 2rem;
+    font-size: 1.2rem;
+    color: #444;
+  }
+
+  .recharts-cartesian-axis-tick-value {
+    font-size: 0.8rem;
+    fill: #444;
+  }
+
+    
   .loading {
     text-align: center;
     padding: 5rem;

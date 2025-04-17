@@ -142,17 +142,6 @@ const SummaryGenerator = () => {
         ))}
       </select>
 
-      <label className="word-slider-label">Número de palabras: {maxWords}</label>
-      <input
-        type="range"
-        min="50"
-        max="500"
-        step="10"
-        value={maxWords}
-        onChange={(e) => setMaxWords(Number(e.target.value))}
-        className="word-slider"
-      />
-
       <div className="summary-content">
         <div className="summary-box">
           {history.map((msg, index) => (
@@ -164,19 +153,33 @@ const SummaryGenerator = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="summary-input">
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Escribe un tema..."
-            disabled={loading}
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? "Generando..." : "Generar"}
-          </button>
-        </form>
-      </div>
-    </div>
+  <input
+    type="text"
+    value={topic}
+    onChange={(e) => setTopic(e.target.value)}
+    placeholder="Escribe un tema..."
+    disabled={loading}
+  />
+  
+  <div className="word-control">
+    <label className="word-slider-label">Palabras: {maxWords}</label>
+    <input
+      type="range"
+      min="50"
+      max="500"
+      step="10"
+      value={maxWords}
+      onChange={(e) => setMaxWords(Number(e.target.value))}
+      className="word-slider"
+    />
+  </div>
+
+  <button type="submit" disabled={loading}>
+    {loading ? "Generando..." : "Generar"}
+  </button>
+  </form>
+  </div>
+</div>
   );
 };
 
