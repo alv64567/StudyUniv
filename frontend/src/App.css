@@ -9,11 +9,129 @@ h1, p {
   margin: 0;
 }
 
-button {
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
+@media (max-width: 992px) {
+  .navbar-collapse {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-top: 8px;
+    padding: 12px;
+  }
+  
+  .nav-link {
+    margin: 4px 0;
+  }
+  
+  .dropdown-menu {
+    position: static !important;
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    margin-top: 8px;
+  }
+  
+
+  .cross-icon {
+    transform: rotate(90deg);
+    transition: transform 0.3s ease;
+  }
 }
 
-button:hover {
-  transform: translateY(-2px);
+
+.navbar {
+  position: relative;
+  z-index: 1030;
 }
+
+
+@media (max-width: 992px) {
+  .navbar-collapse.show {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 1rem;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+  }
+  
+  .dropdown-menu.show {
+    position: absolute !important;
+    right: 15px;
+    top: calc(100% + 10px);
+  }
+  
+  /* Evitar que ambos menús se muestren simultáneamente */
+  .navbar-collapse.show ~ .dropdown-menu.show,
+  .dropdown-menu.show ~ .navbar-collapse.show {
+    display: none !important;
+  }
+  
+  .mobile-menu-list .nav-item {
+    margin-bottom: 0.5rem;
+  }
+  
+  .mobile-menu-list .nav-link {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-menu-list .nav-link:hover {
+    background-color: #f8f9fa;
+  }
+}
+
+.dropdown-menu {
+  border: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Avatar */
+.rounded-circle {
+  transition: transform 0.2s ease;
+}
+
+.rounded-circle:hover {
+  transform: scale(1.05);
+}
+
+@media (min-width: 992px) {
+  .navbar-toggler {
+    display: none;
+  }
+
+  .navbar-nav {
+    gap: 1rem;
+  }
+
+  .nav-link {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+
+  .nav-link:hover {
+    background-color: transparent;
+    color: #000;
+  }
+
+  .mobile-menu-list {
+    flex-direction: row !important;
+    align-items: center;
+  }
+  
+}
+
+
+
+

@@ -126,27 +126,39 @@ useEffect(() => {
       </select>
 
       <div className="chat-content">
-        <div className="chat-box">
-          {messages.map((msg, index) => (
-            <div key={index} className={`message ${msg.sender}`}>
-              <p>{msg.content}</p>
-            </div>
-          ))}
-          <div ref={chatEndRef} />
+      <div className="chat-box container">
+  {messages.map((msg, index) => (
+    <div className="row mb-2" key={index}>
+      <div className={`col-12 d-flex ${msg.sender === "user" ? "justify-content-end" : "justify-content-start"}`}>
+        <div className={`message ${msg.sender}`}>
+          {msg.content}
         </div>
+      </div>
+    </div>
+  ))}
+  <div ref={chatEndRef} />
+</div>
 
-        <form onSubmit={handleSubmit} className="chat-input">
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Escribe tu pregunta..."
-            disabled={loading}
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? "Generando..." : "Enviar"}
-          </button>
-        </form>
+<form onSubmit={handleSubmit} className="chat-input container">
+  <div className="row g-2">
+    <div className="col-9 col-sm-10">
+      <input
+        type="text"
+        className="form-control"
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        placeholder="Escribe tu pregunta..."
+        disabled={loading}
+      />
+    </div>
+    <div className="col-3 col-sm-2 d-grid">
+      <button type="submit" className="btn btn-primary" disabled={loading}>
+        {loading ? "..." : "Enviar"}
+      </button>
+    </div>
+  </div>
+</form>
+
       </div>
     </div>
   );

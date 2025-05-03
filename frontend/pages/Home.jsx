@@ -65,14 +65,15 @@ const Home = () => {
             Ir al Dashboard
           </Link>
         ) : (
-          <div>
-            <Link to="/login" className="btn btn-primary btn-lg m-2">
-              Iniciar Sesión
-            </Link>
-            <Link to="/register" className="btn btn-outline-primary btn-lg m-2">
-              Registrarse
-            </Link>
-          </div>
+          <div className="d-flex justify-content-center gap-3">
+          <Link to="/login" className="btn btn-primary btn-lg px-4 py-2 rounded-pill fw-semibold">
+            Iniciar Sesión
+          </Link>
+          <Link to="/register" className="btn btn-outline-primary btn-lg px-4 py-2 rounded-pill fw-semibold">
+            Registrarse
+          </Link>
+        </div>
+        
         )}
       </div>
 

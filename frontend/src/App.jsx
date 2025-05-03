@@ -15,12 +15,13 @@ import SummaryGenerator from './components/SummaryGenerator/SummaryGenerator';
 import Grades from "./components/Grades";  
 import Statistics from '../pages/Statistics'; 
 import Settings from '../pages/Settings'; 
-import { FluentProvider, webLightTheme } from '@fluentui/react-components';
+import SavedExamCatalog from '../pages/SavedExamCatalog';
+
 
 const App = () => {
   return (
-    <FluentProvider theme={webLightTheme}>
     <Router>
+    <div className="d-flex flex-column min-vh-100">
       <Navbar />
       <div className="container-fluid p-0">
         <Routes>
@@ -100,14 +101,23 @@ const App = () => {
           </ProtectedRoute>
         }
       />
-          
+
+<Route
+  path="/exam-catalog"
+  element={
+    <ProtectedRoute>
+      <SavedExamCatalog />
+    </ProtectedRoute>
+  }
+/>
+
           </Routes>
           
           
       </div>
       <Footer />
+      </div>
     </Router>
-    </FluentProvider>
   );
 };
 

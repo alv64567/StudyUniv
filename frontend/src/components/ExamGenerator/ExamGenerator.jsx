@@ -18,6 +18,8 @@ const ExamGenerator = () => {
   const [examLocked, setExamLocked] = useState(false);
   const token = localStorage.getItem("token");
 
+  const isFromCatalog = new URLSearchParams(window.location.search).has("examId");
+
   useEffect(() => {
     console.log("✅ useEffect ejecutado - Intentando recuperar examen en curso o corregido");
   
@@ -26,42 +28,55 @@ const ExamGenerator = () => {
     localStorage.removeItem("selectedCourse");
   
     const params = new URLSearchParams(window.location.search);
-    let examId = params.get("examId");
-    let selectedCourseId = params.get("courseId") || localStorage.getItem("selectedCourse") || "";
-  
-    if (!examId) {
-      examId = localStorage.getItem(`lastExamId_${selectedCourseId}`);
-    }
-  
-  if (!selectedCourseId || !examId) {
-    return;
-  }
+let examId = params.get("examId");
+
+let selectedCourseId = params.get("courseId") || localStorage.getItem("selectedCourse") || "";
+if (!examId) {
+  examId = localStorage.getItem(`lastExamId_${selectedCourseId}`);
+}
+if (!selectedCourseId || !examId) return;
+
+const examKey = `examState_${selectedCourseId}_${examId}`;
+console.log("🔑 Buscando examen con clave:", examKey);
+
     setCourseId(selectedCourseId);
   
-    const savedExam = localStorage.getItem("savedExam");
-  
-    console.log("📌 Intentando cargar examen corregido desde localStorage...", savedExam);
-  
-    if (savedExam) {
-      console.log("📌 Examen corregido encontrado en localStorage. Cargando...");
-      const examData = JSON.parse(savedExam);
-  
-      console.log("📌 Datos recuperados:", examData);
-  
-      if (examData.exam && Array.isArray(examData.exam)) {
-        console.log("📌 Exam cargado desde localStorage:", examData.exam);
-        setExam(examData.exam);
-        setResponses(examData.responses);
-        setExamLocked(examData.examLocked);
-        setFinalScore(examData.finalScore);
-        setExamType(examData.examType);
-        setGradingResults(examData.gradingResults);
-      } else {
-        console.error("❌ Examen no válido en localStorage:", examData);
-        setExam([]); 
-      }
-      return; 
+    const savedExam = localStorage.getItem(examKey);
+console.log("📌 Intentando cargar examen corregido desde localStorage...", savedExam);
+
+if (savedExam) {
+  const examData = JSON.parse(savedExam); 
+  console.log("📌 Examen corregido encontrado en localStorage. Cargando...");
+  console.log("📦 Examen cargado desde localStorage:", examData);
+
+  if (examData.exam && Array.isArray(examData.exam)) {
+    console.log("📌 Exam cargado desde localStorage:", examData.exam);
+    setExam(examData.exam);
+
+    let mappedResponses = {};
+    if (Array.isArray(examData.responses)) {
+      examData.responses.forEach((val, idx) => {
+        mappedResponses[idx] = val;
+      });
+    } else if (typeof examData.responses === "object" && examData.responses !== null) {
+      mappedResponses = examData.responses;
     }
+    setResponses(mappedResponses);
+    
+  
+
+
+    setExamLocked(examData.examLocked);
+    setFinalScore(examData.finalScore);
+    setExamType(examData.examType);
+    setGradingResults(examData.gradingResults);
+  } else {
+    console.error("❌ Examen no válido en localStorage:", examData);
+    setExam([]); 
+  }
+  return; 
+}
+
   
     console.log("📡 No se encontró el examen en localStorage. Buscando en la BD...");
     fetchCorrectionFromDB(examId, selectedCourseId);
@@ -145,9 +160,28 @@ const ExamGenerator = () => {
       if (result.isConfirmed) {
         setLoading(true);
         try {
-          const formattedResponses = exam.map((_, index) => responses[index] || "");
-  
-          const payload = { responses: formattedResponses, exam, courseId, examType };
+          const formattedResponses = Array.isArray(responses)
+  ? responses
+  : exam.map((_, index) => {
+      const val = responses[index];
+      return typeof val === "string" ? val : (val ? String(val) : "");
+    });
+
+          
+    const examWithAnswer = exam.map(q => ({
+      ...q,
+      answer: q.answer || q.correctAnswer || ""
+    }));
+    
+    const payload = {
+      responses: formattedResponses,
+      exam: examWithAnswer,
+      courseId,
+      examType,
+      saveToGrades: !window.location.search.includes("examId=")
+    };
+    
+          
           console.log("📌 Enviando payload corregido:", JSON.stringify(payload, null, 2));
   
           const res = await axios.post("http://localhost:5000/courses/exam/grade", payload, {
@@ -193,6 +227,14 @@ const ExamGenerator = () => {
 
 
   const fetchCorrectionFromDB = async (examId, courseId) => {
+
+    if (!/^[a-f\d]{24}$/i.test(examId)) {
+      console.log("📌 ID no válido para MongoDB, se omite fetch desde la BD.");
+      setLoading(false);
+      return;
+    }
+
+
     setLoading(true);
     try {
         const res = await axios.get(`http://localhost:5000/users/exam/correction/${examId}`, {
@@ -224,7 +266,15 @@ const ExamGenerator = () => {
             localStorage.setItem("selectedCourse", courseId);
 
             setExam(correctedExam.exam);
-            setResponses(correctedExam.responses);
+            const mappedResponses = Array.isArray(correctedExam.responses)
+  ? correctedExam.responses.reduce((acc, val, i) => {
+      acc[i] = val;
+      return acc;
+    }, {})
+  : correctedExam.responses || {};
+
+setResponses(mappedResponses);
+
             setExamLocked(correctedExam.examLocked);
             setFinalScore(correctedExam.finalScore);
             setExamType(correctedExam.examType);
@@ -237,15 +287,14 @@ const ExamGenerator = () => {
 };
 
 
-  const handleResponseChange = (questionIndex, value) => {
-    if (!examLocked) {
-      setResponses((prev) => {
-        const updatedResponses = { ...prev, [questionIndex]: value };
-        saveExamState(updatedResponses);
-        return updatedResponses;
-      });
-    }
-  };
+const handleResponseChange = (questionIndex, value) => {
+  if (examLocked) return;
+
+  const updatedResponses = { ...responses, [questionIndex]: value };
+  setResponses(updatedResponses);
+  saveExamState(updatedResponses); 
+};
+
   
   const saveExamState = (updatedResponses) => {
     const examId = localStorage.getItem(`lastExamId_${courseId}`);
@@ -266,7 +315,88 @@ const ExamGenerator = () => {
     console.log("📌 Guardando estado del examen en localStorage:", examState);
     localStorage.setItem(`examState_${courseId}_${examId}`, JSON.stringify(examState));
   };
+
+  const handleSaveExam = async () => {
+    const examId = localStorage.getItem(`lastExamId_${courseId}`) || `exam_${courseId}_${Date.now()}`;
   
+    const formattedResponses = exam.map((_, index) => {
+      const val = responses[index];
+      return typeof val === "string" ? val.trim() : (val ? String(val).trim() : "");
+    });
+    
+    const normalizedExam = exam.map(q => ({
+      question: q.question,
+      options: q.options || [],
+      correctAnswer: q.answer || q.correctAnswer || "", 
+    }));
+  
+    const examState = {
+      courseId,
+      examId,
+      exam: normalizedExam,
+      responses: formattedResponses,
+      examLocked: false,
+      finalScore: null,
+      examType,
+      gradingResults: null,
+    };
+  
+    localStorage.setItem(`examState_${courseId}_${examId}`, JSON.stringify(examState));
+    localStorage.setItem(`lastExamId_${courseId}`, examId);
+  
+    try {
+      await axios.post("http://localhost:5000/saved-exams/save", examState, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      Swal.fire("✅ Guardado", "Examen guardado en la base de datos.", "success");
+    } catch (err) {
+      console.error("❌ Error al guardar examen en la BD:", err);
+      Swal.fire("⚠️ Error", "No se pudo guardar el examen en la base de datos.", "error");
+    }
+  };
+
+
+
+  const handleRetryExam = () => {
+    Swal.fire({
+      title: "¿Reintentar examen?",
+      text: "Se reiniciará el examen con las mismas preguntas, pero se borrarán tus respuestas anteriores.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, reintentar"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const newExamId = `exam_${courseId}_${Date.now()}`;
+        const resetResponses = {};
+  
+        exam.forEach((_, idx) => {
+          resetResponses[idx] = "";
+        });
+  
+        const newExamState = {
+          courseId,
+          examId: newExamId,
+          exam,
+          responses: resetResponses,
+          examLocked: false,
+          finalScore: null,
+          examType,
+          gradingResults: null,
+        };
+  
+        localStorage.setItem(`examState_${courseId}_${newExamId}`, JSON.stringify(newExamState));
+        localStorage.setItem(`lastExamId_${courseId}`, newExamId);
+        localStorage.setItem("selectedCourse", courseId);
+  
+        window.location.href = `/exam-generator?examId=${newExamId}&courseId=${courseId}`;
+      }
+    });
+  };
+  
+  
+
   return (
     <div className="exam-container">
       <h2>📖 Generador de Exámenes</h2>
@@ -416,11 +546,30 @@ const ExamGenerator = () => {
     >
       📝 Corregir Examen
     </button>
+
+    {!isFromCatalog && (
+      <button 
+        className="retry-btn"
+        onClick={handleSaveExam}
+      >
+        💾 Guardar Examen
+      </button>
+    )}
   </div>
 )}
 
-</div>
-);
-};
+{exam.length > 0 && examLocked && isFromCatalog && (
+  <div className="exam-results-container">
+    <button 
+      className="retry-btn"
+      onClick={handleRetryExam}
+    >
+      🔁 Reintentar Examen
+    </button>
+  </div>
+)}
+
+  </div>
+)}
 
 export default ExamGenerator;

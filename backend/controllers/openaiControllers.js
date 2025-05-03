@@ -326,7 +326,7 @@ export const getSummary = async (req, res) => {
 
 
 export const gradeExam = async (req, res) => {
-  const { responses, exam, courseId, examType } = req.body;
+  const { responses, exam, courseId, examType, saveToGrades = true } = req.body;
   const userId = req.user.id;
 
   if (!exam || !Array.isArray(exam) || !responses || !courseId || !examType) {
@@ -339,45 +339,66 @@ export const gradeExam = async (req, res) => {
 
     for (let i = 0; i < exam.length; i++) {
       const question = exam[i];
-      const userAnswer = responses[i]?.trim() || "";
+      const rawAnswer = responses[i];
+    
+      let userAnswer = "";
+      if (typeof rawAnswer === "string") {
+        userAnswer = rawAnswer.trim();
+      } else if (rawAnswer !== undefined && rawAnswer !== null) {
+        userAnswer = JSON.stringify(rawAnswer).trim();
+      }
+    
       let score = 0;
       let feedback = "";
-
+    
       if (userAnswer === "") {
         score = 0;
         feedback = "⚠️ Respuesta en blanco. Se otorgan 0 puntos.";
       } else if (examType === "test") {
-        const correctOption = question.answer;
-        score = userAnswer.toLowerCase() === correctOption.toLowerCase() ? 100 : 0;
-        feedback = score === 100 ? "✅ Correcto." : `❌ Incorrecto. La respuesta correcta es: "${correctOption}"`;
-      } else {
-        const aiFeedback = await getAIGradingFeedback(userAnswer, question.question, question.answer);
+        const correctOption = (question.answer || "").toLowerCase().trim();
+        const response = userAnswer.toLowerCase().trim();
+    
+        score = response === correctOption ? 100 : 0;
+        feedback = score === 100
+          ? "✅ Correcto."
+          : `❌ Incorrecto. La respuesta correcta es: "${question.answer}"`;
+      } else if (examType === "open") {
+        const aiFeedback = await getAIGradingFeedback(userAnswer, question.question, question.answer || question.correctAnswer || "");
         score = aiFeedback.score;
         feedback = aiFeedback.comment;
       }
-
+    
       totalScore += score;
-      gradingResults.push({ question: question.question, userAnswer, correctAnswer: question.answer, score, feedback });
+      gradingResults.push({
+        question: question.question,
+        userAnswer,
+        correctAnswer: question.answer || question.correctAnswer || "",
+        score,
+        feedback,
+      });
     }
+    
 
     const averageScore = (totalScore / exam.length).toFixed(2);
 
-    const newScore = new Score({
-      userId,
-      topic: courseId,
-      score: averageScore,
-      examType,
-      questions: exam.map(q => ({
-        question: q.question,
-        options: q.options || [],
-        correctAnswer: q.answer
-      })),
-      responses: responses,
-      gradingResults: gradingResults,
-      createdAt: new Date(),
-    });
+    if (saveToGrades) {
+      const newScore = new Score({
+        userId,
+        topic: courseId,
+        score: averageScore,
+        examType,
+        questions: exam.map(q => ({
+          question: q.question,
+          options: q.options || [],
+          correctAnswer: q.answer
+        })),
+        responses,
+        gradingResults,
+        createdAt: new Date(),
+      });
 
-    await newScore.save();
+      await newScore.save();
+    }
 
     res.status(200).json({ totalScore: averageScore, results: gradingResults });
   } catch (error) {
@@ -385,6 +406,7 @@ export const gradeExam = async (req, res) => {
     res.status(500).json({ message: "Error al corregir el examen." });
   }
 };
+
 
 
 const getAIGradingFeedback = async (userAnswer, question, correctAnswer) => {

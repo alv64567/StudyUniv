@@ -65,7 +65,7 @@ const Login = () => {
           borderRadius: "12px",
           background: "rgba(255, 255, 255, 0.9)", 
           border: "1px solid #ddd",
-          backdropFilter: "blur(5px)", // Desenfoque para mejor visibilidad
+          backdropFilter: "blur(5px)", 
         }}
       >
         <h2 className="text-center mb-4 text-dark" style={{ fontWeight: "bold" }}>

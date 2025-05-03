@@ -11,12 +11,14 @@ import courseRoutes from './routes/courseRoutes.js';
 import path from 'path';
 import Score from './config/models/score.model.js';
 import Summary from './config/models/summary.model.js'; 
+import savedExamRoutes from './routes/savedExamRoutes.js';
 
 dotenv.config(); 
 
 const app = express();
-app.use(express.json()); 
-
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ limit: '5mb', extended: true }));
+ 
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -78,6 +80,7 @@ app.get('/courses/summary/history/:courseId', protect, async (req, res) => {
   }
 });
 
+app.use('/saved-exams', savedExamRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

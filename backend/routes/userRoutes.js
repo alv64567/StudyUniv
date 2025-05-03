@@ -8,6 +8,8 @@ import { obtenerPerfil } from '../controllers/userController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import { obtenerCalificaciones,obtenerCorreccion } from '../controllers/userController.js';
 import { getUserStatistics } from '../controllers/statisticsController.js';
+import { updateUserProfile } from '../controllers/userController.js';
+
 
 
 const router = express.Router();
@@ -22,7 +24,7 @@ router.get("/grades", authMiddleware, obtenerCalificaciones);
 router.get("/grades", authMiddleware, obtenerCalificaciones);
 router.get("/exam/correction/:examId", authMiddleware, obtenerCorreccion); 
 router.get('/statistics', protect, getUserStatistics);
-
+router.put('/update-profile', protect, updateUserProfile);
 
 
 export default router;

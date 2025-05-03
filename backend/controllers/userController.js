@@ -68,7 +68,7 @@ export const loginUser = async (req, res) => {
 
 export const registerUser = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, profilePicture } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'Todos los campos son obligatorios' });
@@ -78,21 +78,32 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
       return res.status(400).json({ message: 'El email ya está registrado' });
     }
 
-    const newUser = new User({ username, email, password });
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: 'El nombre de usuario ya está en uso' });
+    }
+
+    const newUser = new User({
+      username,
+      email,
+      password,
+      profilePicture, 
+    });
+
     await newUser.save();
 
     res.status(201).json({ message: 'Usuario registrado con éxito' });
   } catch (error) {
     console.error('Error al registrar usuario:', error);
-
     res.status(500).json({ message: 'Error del servidor' });
   }
 };
+
 
 
 export const obtenerCorreccion = async (req, res) => {
@@ -138,5 +149,31 @@ export const getPreferences = async (req, res) => {
   } catch (err) {
     console.error('❌ Error al obtener preferencias:', err);
     res.status(500).json({ message: 'Error al obtener preferencias' });
+  }
+};
+
+
+export const updateUserProfile = async (req, res) => {
+  try {
+    const { username, password, profilePicture } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    if (username) user.username = username;
+    if (profilePicture) user.profilePicture = profilePicture;
+
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+      }
+      user.password = password; 
+    }
+
+    await user.save();
+    res.status(200).json({ message: 'Perfil actualizado correctamente' });
+  } catch (err) {
+    console.error('❌ Error al actualizar perfil:', err);
+    res.status(500).json({ message: 'Error al actualizar el perfil' });
   }
 };

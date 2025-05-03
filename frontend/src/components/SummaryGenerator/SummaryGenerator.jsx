@@ -143,41 +143,51 @@ const SummaryGenerator = () => {
       </select>
 
       <div className="summary-content">
-        <div className="summary-box">
-          {history.map((msg, index) => (
-            <div key={index} className={`message ${msg.sender}`}>
-              <p>{msg.content}</p>
-            </div>
-          ))}
-          <div ref={chatEndRef} />
+      <div className="summary-box container">
+  {history.map((msg, index) => (
+    <div className="row mb-2" key={index}>
+      <div className={`col-12 d-flex ${msg.sender === "user" ? "justify-content-end" : "justify-content-start"}`}>
+        <div className={`message ${msg.sender}`}>
+          {msg.content}
         </div>
+      </div>
+    </div>
+  ))}
+  <div ref={chatEndRef} />
+</div>
 
-        <form onSubmit={handleSubmit} className="summary-input">
-  <input
-    type="text"
-    value={topic}
-    onChange={(e) => setTopic(e.target.value)}
-    placeholder="Escribe un tema..."
-    disabled={loading}
-  />
-  
-  <div className="word-control">
-    <label className="word-slider-label">Palabras: {maxWords}</label>
-    <input
-      type="range"
-      min="50"
-      max="500"
-      step="10"
-      value={maxWords}
-      onChange={(e) => setMaxWords(Number(e.target.value))}
-      className="word-slider"
-    />
+<form onSubmit={handleSubmit} className="summary-input container px-0">
+  <div className="row g-2 align-items-center">
+    <div className="col-12 col-md">
+      <div className="d-flex gap-2 align-items-center">
+        <input
+          type="text"
+          className="form-control"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Escribe un tema..."
+          disabled={loading}
+        />
+        <div className="word-control flex-shrink-0">
+          <label className="word-slider-label">Palabras: {maxWords}</label>
+          <input
+            type="range"
+            min="50"
+            max="500"
+            step="10"
+            value={maxWords}
+            onChange={(e) => setMaxWords(Number(e.target.value))}
+            className="form-range"
+          />
+        </div>
+        <button type="submit" className="btn btn-primary btn-sm flex-shrink-0" disabled={loading}>
+          {loading ? "..." : "Generar"}
+        </button>
+      </div>
+    </div>
   </div>
+</form>
 
-  <button type="submit" disabled={loading}>
-    {loading ? "Generando..." : "Generar"}
-  </button>
-  </form>
   </div>
 </div>
   );

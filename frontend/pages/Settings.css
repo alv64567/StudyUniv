@@ -1,94 +1,80 @@
 .settings-container {
-  max-width: 900px;
-  margin: 3rem auto;
-  padding: 2.5rem;
-  background: #ffffff;
+  max-width: 600px;
+  margin: 4rem auto;
+  background: white;
   border-radius: 16px;
+  padding: 2.5rem 2rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   font-family: 'Segoe UI', sans-serif;
-  color: #333;
+  text-align: center;
 }
 
 .settings-container h2 {
-  text-align: center;
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.8rem;
   margin-bottom: 2rem;
   color: #222;
 }
 
-section {
-  margin-bottom: 2.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e0e0e0;
+.settings-container .form-group {
+  margin-bottom: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-section h4 {
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-  color: #444;
-}
-
-label {
+.settings-container label {
   display: block;
-  margin-bottom: 1rem;
-  font-weight: 500;
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+  color: #333;
+  width: 60%;
+  text-align: left;
 }
 
-select {
-  display: block;
-  width: 100%;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
+.settings-container input[type="text"],
+.settings-container input[type="email"],
+.settings-container input[type="password"],
+.settings-container input[type="file"] {
+  width: 60%;
+  padding: 0.4rem 0.75rem;
   border: 1px solid #ccc;
-  margin-top: 0.5rem;
-  font-size: 1rem;
-  background-color: #f8f8f8;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background-color: #f9f9f9;
   transition: border-color 0.3s;
+  text-align: left;
 }
 
-select:focus {
+.settings-container input:focus {
   border-color: #007bff;
   outline: none;
 }
 
-button {
-  margin-top: 0.7rem;
-  margin-right: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 8px;
-  border: none;
-  background-color: #444;
-  color: #fff;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-button:hover {
-  background-color: #000;
-}
-
-.save-button {
-  background-color: #007bff;
-  margin-top: 2rem;
+.settings-container .save-button {
   display: block;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0.8rem 2rem;
-  font-weight: bold;
-  font-size: 1.1rem;
+  width: auto;
+  min-width: 190px;         
+  margin: 1.5rem auto 0;
+  padding: 0.45rem 1.2rem;    
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;        
+  border-radius: 6px;
+  transition: background-color 0.3s;
+  cursor: pointer;
 }
 
-.save-button:hover {
+.settings-container .save-button:hover {
   background-color: #0056b3;
 }
 
-.dropdown-group {
-  margin-top: 0.8rem;
-}
-
-.dropdown-group select {
-  margin-top: 0.3rem;
+.settings-container .profile-preview {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+  border: 2px solid #ccc;
 }

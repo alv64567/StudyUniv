@@ -94,9 +94,9 @@ const Statistics = () => {
           <XAxis 
           dataKey="date"
           angle={-45}             
-          textAnchor="end" // alinear texto
-          interval={0}   //  mostrar todas las fechas
-          height={70}    // Aumenta el espacio si es necesario
+          textAnchor="end" 
+          interval={0}   
+          height={70}    
         />
 
           <YAxis domain={[0, 100]} />

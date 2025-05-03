@@ -227,9 +227,10 @@
   transition: background 0.3s ease;
   width: 100%;
   max-width: 300px;
-  margin-top: 15px;
+  margin-top: 0; /* ✅ */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
 
 .retry-btn:hover {
   background: #e68900; 

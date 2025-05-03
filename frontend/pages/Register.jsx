@@ -7,6 +7,7 @@ const Register = () => {
     username: "",
     email: "",
     password: "",
+    profilePicture: "",
   });
 
   const handleChange = (e) => {
@@ -54,86 +55,109 @@ const Register = () => {
           borderRadius: "12px",
           background: "rgba(255, 255, 255, 0.9)", 
           border: "1px solid #ddd",
-          backdropFilter: "blur(5px)", // Efecto de desenfoque
+          backdropFilter: "blur(5px)", 
         }}
       >
         <h2 className="text-center mb-4 text-dark" style={{ fontWeight: "bold" }}>
           Registrarse
         </h2>
         <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label" style={{ fontWeight: "bold" }}>
-              Nombre de Usuario
-            </label>
-            <input
-              type="text"
-              name="username"
-              className="form-control"
-              placeholder="Nombre de Usuario"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              style={{
-                borderRadius: "8px",
-                padding: "10px",
-                border: "1px solid #ccc",
-                transition: "0.3s",
-              }}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label" style={{ fontWeight: "bold" }}>
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              className="form-control"
-              placeholder="Correo electrónico"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              style={{
-                borderRadius: "8px",
-                padding: "10px",
-                border: "1px solid #ccc",
-                transition: "0.3s",
-              }}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label" style={{ fontWeight: "bold" }}>
-              Contraseña
-            </label>
-            <input
-              type="password"
-              name="password"
-              className="form-control"
-              placeholder="Contraseña"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              style={{
-                borderRadius: "8px",
-                padding: "10px",
-                border: "1px solid #ccc",
-                transition: "0.3s",
-              }}
-            />
-          </div>
-          <button
-            type="submit"
-            className="btn btn-primary w-100"
-            style={{
-              fontWeight: "bold",
-              padding: "10px",
-              borderRadius: "8px",
-              transition: "0.3s",
-            }}
-          >
-            Registrarse
-          </button>
-        </form>
+  <div className="mb-3">
+    <label className="form-label" style={{ fontWeight: "bold" }}>
+      Nombre de Usuario
+    </label>
+    <input
+      type="text"
+      name="username"
+      className="form-control"
+      placeholder="Nombre de Usuario"
+      value={formData.username}
+      onChange={handleChange}
+      required
+      style={{
+        borderRadius: "8px",
+        padding: "10px",
+        border: "1px solid #ccc",
+        transition: "0.3s",
+      }}
+    />
+  </div>
+
+  <div className="mb-3">
+    <label className="form-label" style={{ fontWeight: "bold" }}>
+      Foto de Perfil
+    </label>
+    <input
+      type="file"
+      accept="image/*"
+      className="form-control"
+      onChange={(e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData((prev) => ({ ...prev, profilePicture: reader.result }));
+        };
+        if (file) reader.readAsDataURL(file);
+      }}
+    />
+  </div>
+
+  <div className="mb-3">
+    <label className="form-label" style={{ fontWeight: "bold" }}>
+      Email
+    </label>
+    <input
+      type="email"
+      name="email"
+      className="form-control"
+      placeholder="Correo electrónico"
+      value={formData.email}
+      onChange={handleChange}
+      required
+      style={{
+        borderRadius: "8px",
+        padding: "10px",
+        border: "1px solid #ccc",
+        transition: "0.3s",
+      }}
+    />
+  </div>
+
+  <div className="mb-3">
+    <label className="form-label" style={{ fontWeight: "bold" }}>
+      Contraseña
+    </label>
+    <input
+      type="password"
+      name="password"
+      className="form-control"
+      placeholder="Contraseña"
+      value={formData.password}
+      onChange={handleChange}
+      required
+      style={{
+        borderRadius: "8px",
+        padding: "10px",
+        border: "1px solid #ccc",
+        transition: "0.3s",
+      }}
+    />
+  </div>
+
+  <button
+    type="submit"
+    className="btn btn-primary w-100"
+    style={{
+      fontWeight: "bold",
+      padding: "10px",
+      borderRadius: "8px",
+      transition: "0.3s",
+    }}
+  >
+    Registrarse
+  </button>
+</form>
+
         <div className="text-center mt-3">
           <a href="/login" className="text-muted" style={{ fontSize: "0.9rem" }}>
             ¿Ya tienes una cuenta? Inicia sesión aquí
