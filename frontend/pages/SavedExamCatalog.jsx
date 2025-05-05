@@ -53,7 +53,7 @@ const SavedExamCatalog = () => {
 
   return (
     <div className="container mt-4">
-      <h2>📘 Catálogo de Exámenes Guardados</h2>
+      <h2>📘 Catálogo de Exámenes</h2>
       {savedExams.length === 0 ? (
         <p>No hay exámenes guardados.</p>
       ) : (

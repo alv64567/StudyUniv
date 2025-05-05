@@ -315,26 +315,27 @@ const handleResponseChange = (questionIndex, value) => {
     console.log("📌 Guardando estado del examen en localStorage:", examState);
     localStorage.setItem(`examState_${courseId}_${examId}`, JSON.stringify(examState));
   };
-
   const handleSaveExam = async () => {
     const examId = localStorage.getItem(`lastExamId_${courseId}`) || `exam_${courseId}_${Date.now()}`;
   
-    const formattedResponses = exam.map((_, index) => {
-      const val = responses[index];
-      return typeof val === "string" ? val.trim() : (val ? String(val).trim() : "");
-    });
-    
     const normalizedExam = exam.map(q => ({
       question: q.question,
       options: q.options || [],
-      correctAnswer: q.answer || q.correctAnswer || "", 
+      correctAnswer: q.answer || q.correctAnswer || "",
     }));
   
+    const payload = {
+      courseId,
+      examType,
+      exam: normalizedExam
+    };
+  
+   
     const examState = {
       courseId,
       examId,
       exam: normalizedExam,
-      responses: formattedResponses,
+      responses: {}, 
       examLocked: false,
       finalScore: null,
       examType,
@@ -345,7 +346,7 @@ const handleResponseChange = (questionIndex, value) => {
     localStorage.setItem(`lastExamId_${courseId}`, examId);
   
     try {
-      await axios.post("http://localhost:5000/saved-exams/save", examState, {
+      await axios.post("http://localhost:5000/saved-exams/save", payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Swal.fire("✅ Guardado", "Examen guardado en la base de datos.", "success");
@@ -354,6 +355,7 @@ const handleResponseChange = (questionIndex, value) => {
       Swal.fire("⚠️ Error", "No se pudo guardar el examen en la base de datos.", "error");
     }
   };
+  
 
 
 

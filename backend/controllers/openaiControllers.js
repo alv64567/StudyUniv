@@ -363,7 +363,13 @@ export const gradeExam = async (req, res) => {
           ? "✅ Correcto."
           : `❌ Incorrecto. La respuesta correcta es: "${question.answer}"`;
       } else if (examType === "open") {
-        const aiFeedback = await getAIGradingFeedback(userAnswer, question.question, question.answer || question.correctAnswer || "");
+        const aiFeedback = await getAIGradingFeedback(
+          userAnswer,
+          question.question,
+          question.answer || question.correctAnswer || "",
+          examType
+        );
+        
         score = aiFeedback.score;
         feedback = aiFeedback.comment;
       }
@@ -374,8 +380,9 @@ export const gradeExam = async (req, res) => {
         userAnswer,
         correctAnswer: question.answer || question.correctAnswer || "",
         score,
-        feedback,
+        feedback, 
       });
+      
     }
     
 
@@ -409,27 +416,51 @@ export const gradeExam = async (req, res) => {
 
 
 
-const getAIGradingFeedback = async (userAnswer, question, correctAnswer) => {
+const getAIGradingFeedback = async (userAnswer, question, correctAnswer, examType) => {
+
   try {
     console.log("📡 Enviando a OpenAI...");
     console.log("❓ Pregunta:", question);
     console.log("📝 Respuesta del usuario:", userAnswer);
     console.log("✅ Respuesta correcta esperada:", correctAnswer);
 
-    const prompt = `
-      Evalúa la siguiente respuesta en base a la pregunta y la respuesta correcta proporcionada.
-      Proporciona una calificación en una escala de 0 a 100 y un comentario explicativo.
-      
-      Pregunta: ${question}
-      Tu respuesta ${userAnswer}
-      Respuesta correcta esperada: ${correctAnswer}
+    const prompt = examType === "open"
+      ? `
+    Evalúa la siguiente respuesta a una pregunta abierta.
 
-      Devuelve SOLO un JSON válido con este formato:
-      {
-        "score": 0-100,
-        "comment": "Explicación detallada de la calificación"
-      }
+    - Escribe el comentario como si hablaras directamente al estudiante.
+    - Sé claro, específico y constructivo.
+    - Usa un tono amable en segunda persona.
+    - Evita repetir la pregunta o respuesta original innecesariamente.
+
+    Pregunta: ${question}
+    Tu respuesta: ${userAnswer}
+    Respuesta esperada: ${correctAnswer}
+
+    Devuelve SOLO un JSON válido como este:
+    {
+      "score": 0-100,
+      "comment": "Tu respuesta está bien enfocada porque..."
+    }
+    `
+      : `
+    Evalúa esta respuesta de opción múltiple.
+
+    - Indica si la respuesta seleccionada es correcta o no.
+    - Explica brevemente por qué es correcta o incorrecta.
+
+    Pregunta: ${question}
+    Respuesta del estudiante: ${userAnswer}
+    Opción correcta: ${correctAnswer}
+
+    Devuelve SOLO un JSON válido como este:
+    {
+      "score": 0-100,
+      "comment": "Explicación breve"
+    }
     `;
+
+  
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",

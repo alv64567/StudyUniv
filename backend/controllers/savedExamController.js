@@ -2,17 +2,15 @@ import SavedExam from "../config/models/savedExam.model.js";
 
 export const saveSavedExam = async (req, res) => {
   try {
-    const { courseId, examType, exam, responses, examLocked, finalScore, gradingResults } = req.body;
+    const { courseId, examType, exam } = req.body;
+
 
     const newSavedExam = new SavedExam({
       userId: req.user.id,
       courseId,
       examType,
       exam,
-      responses,
-      examLocked,
-      finalScore,
-      gradingResults
+      examLocked: false, 
     });
 
     await newSavedExam.save();

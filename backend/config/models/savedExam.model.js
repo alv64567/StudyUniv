@@ -11,18 +11,6 @@ const savedExamSchema = new mongoose.Schema({
       correctAnswer: { type: String, default: "" }
     }
   ],
-  responses: [String],
-  examLocked: { type: Boolean, default: false },
-  finalScore: { type: Number, default: null },
-  gradingResults: [
-    {
-      question: String,
-      userAnswer: String,
-      correctAnswer: String,
-      score: Number,
-      feedback: String
-    }
-  ],
   createdAt: { type: Date, default: Date.now }
 });
 
